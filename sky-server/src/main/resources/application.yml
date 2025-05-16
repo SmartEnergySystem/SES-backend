@@ -1,6 +1,8 @@
 server:
   port: 8080
 
+
+
 spring:
   profiles:
     active: dev
@@ -23,11 +25,17 @@ mybatis:
 
 logging:
   level:
+    org:
+      springframework:
+        boot:
+          autoconfigure=DEBUG:
     com:
       sky:
         mapper: debug
         service: info
         controller: info
+
+
 
 sky:
   jwt:
@@ -37,3 +45,4 @@ sky:
     admin-ttl: 7200000
     # 设置前端传递过来的令牌名称
     admin-token-name: token
+
