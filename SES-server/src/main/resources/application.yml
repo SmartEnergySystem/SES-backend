@@ -1,0 +1,59 @@
+server:
+  port: 8080
+
+
+SES:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    host: localhost
+    port: 3306
+    database: SES_db
+    username: root
+    password: 123456
+    # TODO：建立数据库后，需要改为对应的账户信息
+
+  jwt: # 设置jwt签名加密时使用的秘钥
+      admin-secret-key: itcast
+      # 设置jwt过期时间
+      # TODO:恢复正常令牌时长
+      admin-ttl: 7200000000 # 7200 000 =2h, 7200 000 000 =2000h
+      # 设置前端传递过来的令牌名称
+      admin-token-name: token
+
+
+
+spring:
+  profiles:
+    active: dev
+  main:
+    allow-circular-references: true
+  datasource:
+    druid:
+      driver-class-name: ${SES.datasource.driver-class-name}
+      url: jdbc:mysql://${SES.datasource.host}:${SES.datasource.port}/${SES.datasource.database}?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
+      username: ${SES.datasource.username}
+      password: ${SES.datasource.password}
+
+mybatis:
+  #mapper配置文件
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.SES.entity
+  configuration:
+    #开启驼峰命名
+    map-underscore-to-camel-case: true
+
+logging:
+  level:
+    org:
+      springframework:
+        boot:
+          autoconfigure=DEBUG:
+    com:
+      SES:
+        mapper: debug
+        service: info
+        controller: info
+
+
+
+
