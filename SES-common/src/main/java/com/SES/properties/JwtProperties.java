@@ -12,9 +12,10 @@ public class JwtProperties {
     /**
      * 用户端生成jwt令牌相关配置
      */
-    private String adminSecretKey;
-    private long adminTtl;
-    private String adminTokenName;
+    private String adminSecretKey; // 密钥
+    private long adminTtl; // 令牌有效期
+    private String adminTokenName; //前端在请求头中传递 JWT 时使用的Header 名称
 
-
+    // 命名理论上应该以user开头，由于是魔改来的所以就叫admin了
+    // 详细值见application.yml
 }

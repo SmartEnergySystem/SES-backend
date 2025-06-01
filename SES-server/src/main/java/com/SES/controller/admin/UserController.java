@@ -56,7 +56,7 @@ public class UserController {
         UserLoginVO userLoginVO = UserLoginVO.builder()
                 .id(user.getId())
                 .username(user.getUsername())
-                .token(token) //
+                .token(token) // 传递回去的jwt令牌
                 .build();
 
         return Result.success(userLoginVO);
