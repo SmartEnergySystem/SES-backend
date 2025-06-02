@@ -4,7 +4,6 @@ import com.SES.constant.JwtClaimsConstant;
 import com.SES.dto.UserLoginDTO;
 import com.SES.entity.User;
 import com.SES.properties.JwtProperties;
-import com.SES.result.PageResult;
 import com.SES.result.Result;
 import com.SES.service.UserService;
 import com.SES.utils.JwtUtil;
@@ -47,7 +46,7 @@ public class UserController {
 
         //登录成功后，生成jwt令牌
         Map<String, Object> claims = new HashMap<>();
-        claims.put(JwtClaimsConstant.EMP_ID, user.getId());
+        claims.put(JwtClaimsConstant.USER_ID, user.getId()); // 向claims中传入用户id
         String token = JwtUtil.createJWT(
                 jwtProperties.getAdminSecretKey(),
                 jwtProperties.getAdminTtl(),
