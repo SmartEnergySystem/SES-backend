@@ -4,12 +4,20 @@ SES后端仓库Readme
  
 
 
+git相关：
+开始前在IDEA克隆本仓库（使用URL）
+
+提交和推送：使用IDEA中的提交和推送功能（推送到master分支）
+
+注：挂梯子但IDEA仍然连接不上git服务器，见https://blog.csdn.net/qq_57467091/article/details/132461804
+
+
 总而言之代码架构来自：https://www.bilibili.com/video/BV1TP411v7v6/
 进行了一些修改
 
 本项目后端采用java spring+mybatis架构，主要分为controller、service、mapper层。
 
-SES-server模块：
+1.SES-server模块：
 controller：控制层，使用注解接收并解析前端请求，调用service层
 
 service：服务层，软件的核心功能代码
@@ -22,10 +30,10 @@ cofig：配置类
 interceptor：拦截器，检测jwt令牌
 此外还有自定义注解AutoFill：自动填充修改时间等信息
 
-SES-pojo模块：
+2.SES-pojo模块：
 包括实体类、和数据传输对象DTO、VO
 
-SES-common模块：
+3.SES-common模块：
 包含各种常量与工具类
 
 Result：所有函数返回值的统一封装。若有需要返回的数据，先放入result中（调用有参构造函数）
