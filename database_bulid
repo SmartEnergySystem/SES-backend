@@ -1,4 +1,4 @@
--- 创建数据库 111
+-- 创建数据库
 CREATE DATABASE IF NOT EXISTS smart_device_db DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- 切换到新创建的数据库
