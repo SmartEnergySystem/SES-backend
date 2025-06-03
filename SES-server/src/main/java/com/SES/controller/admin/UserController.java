@@ -1,5 +1,6 @@
 package com.SES.controller.admin;
 
+import com.SES.annotation.PassToken;
 import com.SES.constant.JwtClaimsConstant;
 import com.SES.dto.UserLoginDTO;
 import com.SES.entity.User;
@@ -21,7 +22,7 @@ import java.util.Map;
  * 用户理
  */
 @RestController
-@RequestMapping("/admin/auth")
+@RequestMapping("/api/user")
 @Slf4j
 @Api(tags="用户相关接口")
 public class UserController {
@@ -39,6 +40,7 @@ public class UserController {
      */
     @PostMapping("/login")
     @ApiOperation(value="用户登录")
+    @PassToken
     public Result<UserLoginVO> login(@RequestBody UserLoginDTO userLoginDTO) {
         log.info("用户登录：{}", userLoginDTO);
 

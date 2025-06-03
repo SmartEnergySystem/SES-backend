@@ -1,5 +1,6 @@
 package com.SES.interceptor;
 
+import com.SES.annotation.PassToken;
 import com.SES.constant.JwtClaimsConstant;
 import com.SES.context.BaseContext;
 import com.SES.properties.JwtProperties;
@@ -36,6 +37,17 @@ public class JwtTokenAdminInterceptor implements HandlerInterceptor {
         //判断当前拦截到的是Controller的方法还是其他资源
         if (!(handler instanceof HandlerMethod)) {
             //当前拦截到的不是动态方法，直接放行
+            return true;
+        }
+
+        HandlerMethod handlerMethod = (HandlerMethod) handler;
+
+        // 获取类、方法上的 @PassToken 注解
+        boolean classAnnotation = handlerMethod.getBeanType().isAnnotationPresent(PassToken.class);
+        boolean methodAnnotation = handlerMethod.getMethod().isAnnotationPresent(PassToken.class);
+
+        // 如果类上或方法上有 @PassToken，直接放行
+        if (classAnnotation || methodAnnotation) {
             return true;
         }
 
