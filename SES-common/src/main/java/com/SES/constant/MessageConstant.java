@@ -16,4 +16,7 @@ public class MessageConstant {
     public static final String PASSWORD_EDIT_FAILED = "密码修改失败";
 
 
+    public static final String TOKEN_NOT_EXPIRED = "token尚未过期";
+    public static final String TOKEN_EXPIRED_TOO_LONG = "token过期时间太长";
+    public static final String INVALID_TOKEN = "无效的token";
 }

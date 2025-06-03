@@ -1,11 +1,20 @@
 package com.SES.utils;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtBuilder;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import com.SES.constant.JwtClaimsConstant;
+import com.alibaba.fastjson.JSONObject;
+import io.jsonwebtoken.*;
+
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.nio.charset.StandardCharsets;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Map;
 
 /**
@@ -56,6 +65,59 @@ public class JwtUtil {
                 // 设置需要解析的jwt
                 .parseClaimsJws(token).getBody();
         return claims;
+    }
+
+
+    /**
+     * 从旧 Token 中提取 user_id 和 exp
+     * @param oldToken 原始的 JWT Token
+     * @return
+     */
+    public static Map<String, Long> extractUserIdAndExpFromToken(String oldToken) {
+        try {
+            // Step 1: Base64 解码 JWT payload
+            String[] parts = oldToken.split("\\.");
+            if (parts.length != 3) {
+                return null;
+            }
+
+            String payloadB64 = parts[1];
+            byte[] decodedBytes = Base64.getUrlDecoder().decode(payloadB64);
+            String payloadJson = new String(decodedBytes, StandardCharsets.UTF_8);
+
+            // Step 2: 提取字段
+            String userIdKey = JwtClaimsConstant.USER_ID;
+            Long userId = extractLongValue(payloadJson, userIdKey);
+            Long exp = extractLongValue(payloadJson, "exp");
+
+            if (userId == null || exp == null) {
+                return null;
+            }
+
+            Map<String, Long> result = new HashMap<>();
+            result.put("user_id", userId);
+            result.put("exp", exp);
+            return result;
+
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * 辅助方法：提取 JSON 字符串中的字段值
+     * @param json
+     * @param key
+     * @return
+     */
+    public static Long extractLongValue(String json, String key) {
+        // 匹配类似 "user_id":123 或 "exp":1717462792 的模式
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\"" + key + "\"\\s*:\\s*(\\d+)");
+        java.util.regex.Matcher matcher = pattern.matcher(json);
+        if (matcher.find()) {
+            return Long.parseLong(matcher.group(1));
+        }
+        return null;
     }
 
 }
