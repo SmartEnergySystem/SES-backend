@@ -1,0 +1,146 @@
+-- 创建数据库 1
+CREATE DATABASE IF NOT EXISTS smart_device_db DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- 切换到新创建的数据库
+USE smart_device_db;
+
+-- 1. 用户信息表
+CREATE TABLE IF NOT EXISTS `user` (
+    `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+    `username` VARCHAR(32) NOT NULL UNIQUE,
+    `password` VARCHAR(64) NOT NULL,
+    `status` INT NOT NULL DEFAULT 1,
+    `type` INT NOT NULL DEFAULT 0,
+    `createtime` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updatetime` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `create_user` BIGINT,
+    `update_user` BIGINT
+);
+
+-- 2. 设备表
+CREATE TABLE IF NOT EXISTS `device` (
+    `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+    `user_id` BIGINT NOT NULL,
+    `name` VARCHAR(32) NOT NULL,
+    `last_known_status` INT NOT NULL DEFAULT 0,
+    `last_known_mode_id` BIGINT,
+    `default_mode_id` BIGINT,
+    `policy_id` BIGINT
+);
+
+-- 3. 设备运行模式表
+CREATE TABLE IF NOT EXISTS `device_mode` (
+    `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+    `device_id` BIGINT NOT NULL,
+    `name` VARCHAR(32) NOT NULL,
+    UNIQUE KEY `unique_device_mode` (`device_id`, `name`)
+);
+
+-- 4. 策略表
+CREATE TABLE IF NOT EXISTS `policy` (
+    `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+    `device_id` BIGINT NOT NULL,
+    `name` VARCHAR(32) NOT NULL,
+    `createtime` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updatetime` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- 5. 策略条目表
+CREATE TABLE IF NOT EXISTS `policy_item` (
+    `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+    `policy_id` BIGINT NOT NULL,
+    `start_time` DATETIME NOT NULL,
+    `end_time` DATETIME NOT NULL,
+    `mode_id` BIGINT NOT NULL
+);
+
+-- 6. 批量操作表
+CREATE TABLE IF NOT EXISTS `batch` (
+    `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+    `user_id` BIGINT NOT NULL,
+    `name` VARCHAR(32) NOT NULL,
+    `createtime` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updatetime` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- 7. 批量操作条目表
+CREATE TABLE IF NOT EXISTS `batch_item` (
+    `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+    `batch_id` BIGINT NOT NULL,
+    `device_id` BIGINT NOT NULL,
+    `isApplyPolicy` INT,
+    `status` INT,
+    `mode_id` BIGINT,
+    `policy_id` BIGINT
+);
+
+-- 8. 设备运行日志表
+CREATE TABLE IF NOT EXISTS `device_log` (
+    `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+    `user_id` BIGINT NOT NULL,
+    `user_username` VARCHAR(32) NOT NULL,
+    `device_id` BIGINT NOT NULL,
+    `device_name` VARCHAR(32) NOT NULL,
+    `start_time` DATETIME NOT NULL,
+    `end_time` DATETIME NOT NULL,
+    `status` INT NOT NULL,
+    `mode_name` VARCHAR(32) NOT NULL,
+    `policy_name` VARCHAR(32),
+    `policy` JSON,
+    `power` INT NOT NULL,
+    `energy_consumption` INT NOT NULL
+);
+
+-- 9. 警报日志表
+CREATE TABLE IF NOT EXISTS `alert_log` (
+    `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+    `user_id` BIGINT NOT NULL,
+    `user_username` VARCHAR(32) NOT NULL,
+    `device_id` BIGINT NOT NULL,
+    `device_name` VARCHAR(32) NOT NULL,
+    `time` DATETIME NOT NULL,
+    `level` INT NOT NULL,
+    `status` INT NOT NULL,
+    `mode_name` VARCHAR(32) NOT NULL,
+    `policy_name` VARCHAR(32),
+    `policy` JSON,
+    `message` VARCHAR(200) NOT NULL
+);
+
+-- 10. 操作日志表
+CREATE TABLE IF NOT EXISTS `operation_log` (
+    `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+    `user_id` BIGINT NOT NULL,
+    `user_username` VARCHAR(32) NOT NULL,
+    `device_id` BIGINT NOT NULL,
+    `device_name` VARCHAR(32) NOT NULL,
+    `time` DATETIME NOT NULL,
+    `isApplyPolicy` INT,
+    `status` INT,
+    `mode_name` VARCHAR(32),
+    `policy_name` VARCHAR(32),
+    `policy` JSON,
+    `batch_name` VARCHAR(32)
+);
+
+-- 11. 模拟设备表
+CREATE TABLE IF NOT EXISTS `sim_device` (
+    `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+    `device_id` BIGINT NOT NULL,
+    `status` INT NOT NULL DEFAULT 0,
+    `mode_name` VARCHAR(32) NOT NULL
+);
+
+-- 12. 模拟设备运行模式表
+CREATE TABLE IF NOT EXISTS `sim_device_mode` (
+    `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+    `device_id` BIGINT NOT NULL,
+    `name` VARCHAR(32) NOT NULL,
+    `power` INT NOT NULL,
+    UNIQUE KEY `unique_sim_device_mode` (`device_id`, `name`)
+);
+
+-- 创建开发用户并授权
+CREATE USER 'dev_user'@'%' IDENTIFIED BY 'StrongPassword123!';
+GRANT ALL PRIVILEGES ON smart_device_db.* TO 'dev_user'@'%';
+FLUSH PRIVILEGES;
