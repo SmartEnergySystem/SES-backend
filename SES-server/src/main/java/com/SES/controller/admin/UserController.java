@@ -3,6 +3,7 @@ package com.SES.controller.admin;
 import com.SES.annotation.PassToken;
 import com.SES.constant.JwtClaimsConstant;
 import com.SES.dto.UserLoginDTO;
+import com.SES.dto.UserDTO;
 import com.SES.entity.User;
 import com.SES.properties.JwtProperties;
 import com.SES.result.Result;
@@ -61,6 +62,21 @@ public class UserController {
                 .build();
 
         return Result.success(userLoginVO);
+    }
+
+
+    /**
+     * 新用户注册
+     * @param userDTO
+     * @return
+     */
+    @PostMapping
+    @ApiOperation(value="新用户注册")
+    @PassToken
+    public Result<String> register(@RequestBody UserDTO userDTO) {
+
+        userService.register(userDTO);
+        return Result.success();
     }
 
     /**

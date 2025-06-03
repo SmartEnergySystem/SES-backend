@@ -31,4 +31,8 @@ public class User implements Serializable {
 
     //@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updateTime;
+
+    private Long createUser;
+
+    private Long updateUser;
 }

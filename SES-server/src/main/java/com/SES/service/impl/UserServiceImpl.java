@@ -2,13 +2,17 @@ package com.SES.service.impl;
 
 import com.SES.constant.MessageConstant;
 import com.SES.constant.StatusConstant;
+import com.SES.constant.UserTypeConstant;
 import com.SES.dto.UserLoginDTO;
+import com.SES.dto.UserDTO;
 import com.SES.entity.User;
 import com.SES.exception.AccountLockedException;
 import com.SES.exception.AccountNotFoundException;
+import com.SES.exception.DuplicateException;
 import com.SES.exception.PasswordErrorException;
 import com.SES.mapper.UserMapper;
 import com.SES.service.UserService;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
@@ -34,7 +38,7 @@ public class UserServiceImpl implements UserService {
         //2、处理各种异常情况（用户名不存在、密码不对、账号被锁定）
         if (user == null) {
             //账号不存在
-            throw new AccountNotFoundException(MessageConstant.ACCOUNT_NOT_FOUND);
+            throw new AccountNotFoundException("账号"+MessageConstant.NOT_EXISTS);
         }
 
         //密码比对
@@ -54,6 +58,30 @@ public class UserServiceImpl implements UserService {
         return user;
     }
 
+    /**
+     * 新用户注册
+     * @param userDTO
+     * @return
+     */
+    @Override
+    public void register(UserDTO userDTO) {
+        // 1. 校验用户名是否已存在
+        User existingUser = userMapper.getByUsername(userDTO.getUsername());
+        if (existingUser != null) {
+            throw new DuplicateException("用户名"+MessageConstant.ALREADY_EXISTS);
+        }
 
+        User user = new User();
 
+        // 对象属性拷贝
+        BeanUtils.copyProperties(userDTO,user);
+
+        user.setStatus(StatusConstant.ENABLE); // 默认账号状态为可用
+        user.setType(UserTypeConstant.NORMAL); // 默认账号类型为普通
+
+        // 密码加密
+        user.setPassword(DigestUtils.md5DigestAsHex(user.getPassword().getBytes()));
+
+        userMapper.insert(user);
+    }
 }

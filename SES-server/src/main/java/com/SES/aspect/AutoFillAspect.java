@@ -16,6 +16,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.LocalDateTime;
 
+import static com.SES.utils.ReflectionUtils.setIfMethodExists;
+
 /**
  * 自定义切面类
  */
@@ -55,43 +57,28 @@ public class AutoFillAspect {
         Long currentId = BaseContext.getCurrentId();
 
 
+        // 根据操作类型执行不同的填充逻辑
 
-
-        // 通过反射赋值
         if (operationType == OperationType.INSERT) {
-            try{
-                Method setCreateTime = entity.getClass().getDeclaredMethod(AutoFillConstant.SET_CREATE_TIME, LocalDateTime.class);
-                Method setCreateUser = entity.getClass().getDeclaredMethod(AutoFillConstant.SET_CREATE_USER, Long.class);
-                Method setUpdateTime = entity.getClass().getDeclaredMethod(AutoFillConstant.SET_UPDATE_TIME, LocalDateTime.class);
-                Method setUpdateUser = entity.getClass().getDeclaredMethod(AutoFillConstant.SET_UPDATE_USER, Long.class);
+            setIfMethodExists(entity, AutoFillConstant.SET_CREATE_TIME, nowTime);
+            setIfMethodExists(entity, AutoFillConstant.SET_UPDATE_TIME, nowTime);
 
-                setCreateTime.invoke(entity,nowTime);
-                setCreateUser.invoke(entity,currentId);
-                setUpdateTime.invoke(entity,nowTime);
-                setUpdateUser.invoke(entity,currentId);
-            }catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e){
-                e.printStackTrace();
+            if (currentId != null) {
+                setIfMethodExists(entity, AutoFillConstant.SET_CREATE_USER, currentId);
+                setIfMethodExists(entity, AutoFillConstant.SET_UPDATE_USER, currentId);
+            } else {
+                log.warn("当前用户ID为空，跳过 create_user 和 update_user 字段填充");
             }
-        }else{
-            try{
-                Method setUpdateTime = entity.getClass().getDeclaredMethod(AutoFillConstant.SET_UPDATE_TIME, LocalDateTime.class);
-                Method setUpdateUser = entity.getClass().getDeclaredMethod(AutoFillConstant.SET_UPDATE_USER, Long.class);
+        } else if (operationType == OperationType.UPDATE) {
+            setIfMethodExists(entity, AutoFillConstant.SET_UPDATE_TIME, nowTime);
 
-                setUpdateTime.invoke(entity,nowTime);
-                setUpdateUser.invoke(entity,currentId);
-            }catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e){
-                e.printStackTrace();
+            if (currentId != null) {
+                setIfMethodExists(entity, AutoFillConstant.SET_UPDATE_USER, currentId);
+            } else {
+                log.warn("当前用户ID为空，跳过 update_user 字段填充");
             }
         }
-
-
     }
-
-
-
-
-
-
 
 
 }

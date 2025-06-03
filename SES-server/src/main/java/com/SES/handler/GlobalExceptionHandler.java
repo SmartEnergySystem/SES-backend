@@ -27,30 +27,4 @@ public class GlobalExceptionHandler {
         return Result.error(ex.getMessage());
     }
 
-    /**
-     * 处理SQL异常
-     * @param ex 异常对象
-     * @return 结果对象
-     */
-    @ExceptionHandler
-    public Result exceptionHandler(SQLIntegrityConstraintViolationException ex) {
-        // 获取异常信息
-        String message = ex.getMessage();
-
-        // 检查异常信息是否包含"Duplicate entry"
-        if (message.contains("Duplicate entry")) {
-            // 分割异常信息字符串以获取用户名
-            String[] split = message.split(" ");
-            String username = split[2];
-
-            // 构建错误消息
-            String msg = username + MessageConstant.ALREADY_EXISTS;
-
-            // 返回带有错误消息的结果
-            return Result.error(msg);
-        } else {
-            // 如果不是重复条目异常，则返回未知错误结果
-            return Result.error(MessageConstant.UNKNOWN_ERROR);
-        }
-    }
 }
