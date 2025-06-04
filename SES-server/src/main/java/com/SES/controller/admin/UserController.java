@@ -7,8 +7,10 @@ import com.SES.context.BaseContext;
 import com.SES.dto.PasswordEditDTO;
 import com.SES.dto.UserLoginDTO;
 import com.SES.dto.UserDTO;
+import com.SES.dto.UserPageQueryDTO;
 import com.SES.entity.User;
 import com.SES.properties.JwtProperties;
+import com.SES.result.PageResult;
 import com.SES.result.Result;
 import com.SES.service.UserService;
 import com.SES.utils.JwtUtil;
@@ -116,6 +118,21 @@ public class UserController {
 
         userService.editType(id,type);
         return Result.success();
+    }
+    // TODO:该功能待测试
+
+    /**
+     * 用户分页查询
+     * @param userPageQueryDTO
+     * @return
+     */
+    @GetMapping("/page")
+    @ApiOperation("员工分页查询")
+    public Result<PageResult> page(UserPageQueryDTO userPageQueryDTO) {
+        log.info("用户分页查询：{}", userPageQueryDTO);
+        PageResult pageResult =  userService.pageQueny(userPageQueryDTO);
+
+        return Result.success(pageResult);
     }
     // TODO:该功能待测试
 

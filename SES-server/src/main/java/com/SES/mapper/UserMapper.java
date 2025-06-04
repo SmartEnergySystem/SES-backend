@@ -1,8 +1,10 @@
 package com.SES.mapper;
 
 import com.SES.annotation.AutoFill;
+import com.SES.dto.UserPageQueryDTO;
 import com.SES.entity.User;
 import com.SES.enumeration.OperationType;
+import com.github.pagehelper.Page;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -42,4 +44,11 @@ public interface UserMapper {
      */
     @AutoFill(OperationType.UPDATE)
     void update(User user);
+
+    /**
+     * 用户分页查询
+     * @param userPageQueryDTO
+     * @return
+     */
+    Page<User> pageQueny(UserPageQueryDTO userPageQueryDTO);
 }

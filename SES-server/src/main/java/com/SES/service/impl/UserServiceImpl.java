@@ -7,14 +7,20 @@ import com.SES.context.BaseContext;
 import com.SES.dto.PasswordEditDTO;
 import com.SES.dto.UserLoginDTO;
 import com.SES.dto.UserDTO;
+import com.SES.dto.UserPageQueryDTO;
 import com.SES.entity.User;
 import com.SES.exception.*;
 import com.SES.mapper.UserMapper;
+import com.SES.result.PageResult;
 import com.SES.service.UserService;
+import com.github.pagehelper.Page;
+import com.github.pagehelper.PageHelper;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
+
+import java.util.List;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -134,6 +140,23 @@ public class UserServiceImpl implements UserService {
         user.setType(type);
 
         userMapper.update(user);
+    }
+
+    /**
+     * 用户分页查询
+     * @param userPageQueryDTO
+     * @return
+     */
+    @Override
+    public PageResult pageQueny(UserPageQueryDTO userPageQueryDTO) {
+        PageHelper.startPage(userPageQueryDTO.getPage(),userPageQueryDTO.getPageSize());
+
+        Page<User> page = userMapper.pageQueny(userPageQueryDTO);
+
+        long total = page.getTotal();
+        List<User> records = page.getResult();
+
+        return new PageResult(total,records);
     }
 
     /**
