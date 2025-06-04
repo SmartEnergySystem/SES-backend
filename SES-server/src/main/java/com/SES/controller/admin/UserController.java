@@ -112,7 +112,7 @@ public class UserController {
      * @return
      */
     @PutMapping("/{id}/type")
-    @ApiOperation(value="修改密码")
+    @ApiOperation(value="修改权限")
     @PassToken
     public Result<String> editType(@PathVariable Long id, @RequestParam Integer type) {
 
@@ -127,12 +127,24 @@ public class UserController {
      * @return
      */
     @GetMapping("/page")
-    @ApiOperation("员工分页查询")
+    @ApiOperation("用户分页查询")
     public Result<PageResult> page(UserPageQueryDTO userPageQueryDTO) {
         log.info("用户分页查询：{}", userPageQueryDTO);
         PageResult pageResult =  userService.pageQueny(userPageQueryDTO);
 
         return Result.success(pageResult);
+    }
+    // TODO:该功能待测试
+
+    /**
+     * 启用禁用账号
+     * @return
+     */
+    @PostMapping("/{id}/status/{status}")
+    @ApiOperation(value="启用禁用账号")
+    public Result<String> startOrStop(@PathVariable Long id,@PathVariable Integer status) {
+        userService.startOrStop(id,status);
+        return Result.success();
     }
     // TODO:该功能待测试
 

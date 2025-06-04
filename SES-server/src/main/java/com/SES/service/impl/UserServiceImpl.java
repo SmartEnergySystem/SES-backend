@@ -149,6 +149,9 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public PageResult pageQueny(UserPageQueryDTO userPageQueryDTO) {
+        // 校验管理员权限
+        this.checkCurrentUserIsAdmin();
+
         PageHelper.startPage(userPageQueryDTO.getPage(),userPageQueryDTO.getPageSize());
 
         Page<User> page = userMapper.pageQueny(userPageQueryDTO);
@@ -157,6 +160,28 @@ public class UserServiceImpl implements UserService {
         List<User> records = page.getResult();
 
         return new PageResult(total,records);
+    }
+
+    /**
+     * 启用禁用账号
+     * @param id
+     * @param status
+     */
+    @Override
+    public void startOrStop(Long id, Integer status) {
+        // 校验管理员权限
+        this.checkCurrentUserIsAdmin();
+
+        User user = userMapper.getById(id);
+
+        if (user == null) {
+            //账号不存在
+            throw new AccountNotFoundException("账号"+MessageConstant.NOT_EXISTS);
+        }
+
+        user.setStatus(status);
+
+        userMapper.update(user);
     }
 
     /**

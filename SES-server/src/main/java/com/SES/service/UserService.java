@@ -48,4 +48,11 @@ public interface UserService {
      * @return
      */
     PageResult pageQueny(UserPageQueryDTO userPageQueryDTO);
+
+    /**
+     * 启用禁用账号
+     * @param id
+     * @param status
+     */
+    void startOrStop(Long id, Integer status);
 }
