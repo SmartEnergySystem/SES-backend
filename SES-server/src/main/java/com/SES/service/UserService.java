@@ -1,5 +1,6 @@
 package com.SES.service;
 
+import com.SES.dto.PasswordEditDTO;
 import com.SES.dto.UserLoginDTO;
 import com.SES.dto.UserDTO;
 import com.SES.entity.User;
@@ -19,4 +20,10 @@ public interface UserService {
      * @return
      */
     void register(UserDTO userDTO);
+
+    /**
+     * 修改密码
+     * @param passwordEditDTO
+     */
+    void editPassword(PasswordEditDTO passwordEditDTO);
 }

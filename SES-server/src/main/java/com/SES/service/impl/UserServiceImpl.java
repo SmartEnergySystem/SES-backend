@@ -3,6 +3,8 @@ package com.SES.service.impl;
 import com.SES.constant.MessageConstant;
 import com.SES.constant.StatusConstant;
 import com.SES.constant.UserTypeConstant;
+import com.SES.context.BaseContext;
+import com.SES.dto.PasswordEditDTO;
 import com.SES.dto.UserLoginDTO;
 import com.SES.dto.UserDTO;
 import com.SES.entity.User;
@@ -83,5 +85,32 @@ public class UserServiceImpl implements UserService {
         user.setPassword(DigestUtils.md5DigestAsHex(user.getPassword().getBytes()));
 
         userMapper.insert(user);
+    }
+
+
+    @Override
+    public void editPassword(PasswordEditDTO passwordEditDTO) {
+        Long userId = BaseContext.getCurrentId();
+        String oldPassword = passwordEditDTO.getOldPassword();
+        String newPassword = passwordEditDTO.getNewPassword();
+
+        User user = userMapper.getById(userId); //
+
+        if (user == null) {
+            //账号不存在
+            throw new AccountNotFoundException("账号"+MessageConstant.NOT_EXISTS);
+        }
+
+        //密码比对
+        // 进行md5加密，然后再进行比对
+        oldPassword = DigestUtils.md5DigestAsHex(oldPassword.getBytes());
+        if (!oldPassword.equals(user.getPassword())) {
+            //密码错误
+            throw new PasswordErrorException(MessageConstant.PASSWORD_ERROR);
+        }
+
+        user.setPassword(DigestUtils.md5DigestAsHex(newPassword.getBytes()));
+
+        userMapper.update(user);
     }
 }

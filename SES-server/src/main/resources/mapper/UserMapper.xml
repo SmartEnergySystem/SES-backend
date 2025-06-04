@@ -4,4 +4,14 @@
 <mapper namespace="com.SES.mapper.UserMapper">
 
 
+    <update id="update" parameterType="User">
+        update user
+        <set>
+            <if test="username != null">username = #{username},</if>
+            <if test="password != null">password = #{password},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="type != null">status = #{type},</if>
+        </set>
+        where id = #{id}
+    </update>
 </mapper>

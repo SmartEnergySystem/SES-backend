@@ -35,4 +35,11 @@ public interface UserMapper {
             "(#{username},#{password},#{status},#{type})")
     @AutoFill(OperationType.INSERT)
     void insert(User user);
+
+    /**
+     * 根据主键动态修改属性
+     * @param user
+     */
+    @AutoFill(OperationType.UPDATE)
+    void update(User user);
 }

@@ -4,6 +4,7 @@ import com.SES.annotation.PassToken;
 import com.SES.constant.JwtClaimsConstant;
 import com.SES.constant.MessageConstant;
 import com.SES.context.BaseContext;
+import com.SES.dto.PasswordEditDTO;
 import com.SES.dto.UserLoginDTO;
 import com.SES.dto.UserDTO;
 import com.SES.entity.User;
@@ -86,6 +87,21 @@ public class UserController {
         userService.register(userDTO);
         return Result.success();
     }
+
+    /**
+     * 修改密码
+     * @param passwordEditDTO
+     * @return
+     */
+    @PutMapping("/editPassword")
+    @ApiOperation(value="修改密码")
+    @PassToken
+    public Result<String> editPassword(@RequestBody PasswordEditDTO passwordEditDTO) {
+
+        userService.editPassword(passwordEditDTO);
+        return Result.success();
+    }
+    // TODO:该功能待测试
 
     /**
      * 退出登录
