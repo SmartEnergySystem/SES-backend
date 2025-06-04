@@ -103,6 +103,22 @@ public class UserController {
     }
     // TODO:该功能待测试
 
+
+    /**
+     * 修改账号权限
+     * @param type
+     * @return
+     */
+    @PutMapping("/{id}/type")
+    @ApiOperation(value="修改密码")
+    @PassToken
+    public Result<String> editType(@PathVariable Long id, @RequestParam Integer type) {
+
+        userService.editType(id,type);
+        return Result.success();
+    }
+    // TODO:该功能待测试
+
     /**
      * 退出登录
      * @return

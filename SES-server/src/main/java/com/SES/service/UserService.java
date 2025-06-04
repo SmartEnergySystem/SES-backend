@@ -26,4 +26,17 @@ public interface UserService {
      * @param passwordEditDTO
      */
     void editPassword(PasswordEditDTO passwordEditDTO);
+
+    /**
+     * 修改账号权限
+     * @param id
+     * @param type
+     */
+    void editType(Long id, Integer type);
+
+
+    /**
+     * 判断当前操作用户是否为管理员
+     */
+    void checkCurrentUserIsAdmin();
 }

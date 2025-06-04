@@ -8,10 +8,7 @@ import com.SES.dto.PasswordEditDTO;
 import com.SES.dto.UserLoginDTO;
 import com.SES.dto.UserDTO;
 import com.SES.entity.User;
-import com.SES.exception.AccountLockedException;
-import com.SES.exception.AccountNotFoundException;
-import com.SES.exception.DuplicateException;
-import com.SES.exception.PasswordErrorException;
+import com.SES.exception.*;
 import com.SES.mapper.UserMapper;
 import com.SES.service.UserService;
 import org.springframework.beans.BeanUtils;
@@ -87,14 +84,17 @@ public class UserServiceImpl implements UserService {
         userMapper.insert(user);
     }
 
-
+    /**
+     * 修改密码
+     * @param passwordEditDTO
+     */
     @Override
     public void editPassword(PasswordEditDTO passwordEditDTO) {
-        Long userId = BaseContext.getCurrentId();
+        Long currentUserId = BaseContext.getCurrentId();
         String oldPassword = passwordEditDTO.getOldPassword();
         String newPassword = passwordEditDTO.getNewPassword();
 
-        User user = userMapper.getById(userId); //
+        User user = userMapper.getById(currentUserId);
 
         if (user == null) {
             //账号不存在
@@ -112,5 +112,52 @@ public class UserServiceImpl implements UserService {
         user.setPassword(DigestUtils.md5DigestAsHex(newPassword.getBytes()));
 
         userMapper.update(user);
+    }
+
+    /**
+     * 修改账号权限
+     * @param id
+     * @param type
+     */
+    @Override
+    public void editType(Long id, Integer type) {
+        // 校验管理员权限
+        this.checkCurrentUserIsAdmin();
+
+        User user = userMapper.getById(id);
+
+        if (user == null) {
+            //账号不存在
+            throw new AccountNotFoundException("账号"+MessageConstant.NOT_EXISTS);
+        }
+
+        user.setType(type);
+
+        userMapper.update(user);
+    }
+
+    /**
+     * 判断当前操作用户是否为管理员
+     * @return
+     */
+    @Override
+    public void checkCurrentUserIsAdmin() {
+        Long currentUserId = BaseContext.getCurrentId();
+
+        User user = userMapper.getById(currentUserId);
+
+        if (user == null) {
+            //账号不存在
+            throw new AdminCheckException(MessageConstant.ADMIN_CHECK_FAILED+"（账号"+MessageConstant.NOT_EXISTS+"）");
+        }
+
+        if (user.getStatus() == StatusConstant.DISABLE) {
+            //账号被锁定
+            throw new AdminCheckException(MessageConstant.ADMIN_CHECK_FAILED+"（"+MessageConstant.ACCOUNT_LOCKED+"）");
+        }
+
+        if (user.getType() != UserTypeConstant.ADMIN) {
+            throw new AdminCheckException(MessageConstant.ADMIN_CHECK_FAILED);
+        }
     }
 }
