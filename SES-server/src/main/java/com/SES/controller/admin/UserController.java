@@ -3,11 +3,7 @@ package com.SES.controller.admin;
 import com.SES.annotation.PassToken;
 import com.SES.constant.JwtClaimsConstant;
 import com.SES.constant.MessageConstant;
-import com.SES.context.BaseContext;
-import com.SES.dto.PasswordEditDTO;
-import com.SES.dto.UserLoginDTO;
-import com.SES.dto.UserDTO;
-import com.SES.dto.UserPageQueryDTO;
+import com.SES.dto.user.*;
 import com.SES.entity.User;
 import com.SES.properties.JwtProperties;
 import com.SES.result.PageResult;
@@ -21,12 +17,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.SES.utils.JwtUtil.extractLongValue;
 import static com.SES.utils.JwtUtil.extractUserIdAndExpFromToken;
 
 /**
@@ -97,29 +90,30 @@ public class UserController {
      */
     @PutMapping("/editPassword")
     @ApiOperation(value="修改密码")
-    @PassToken
     public Result<String> editPassword(@RequestBody PasswordEditDTO passwordEditDTO) {
 
         userService.editPassword(passwordEditDTO);
         return Result.success();
     }
-    // TODO:该功能待测试
+
 
 
     /**
      * 修改账号权限
-     * @param type
+     * @param id
+     * @param userEditTypeDTO
      * @return
      */
     @PutMapping("/{id}/type")
     @ApiOperation(value="修改权限")
-    @PassToken
-    public Result<String> editType(@PathVariable Long id, @RequestParam Integer type) {
-
+    public Result<String> editType(@PathVariable Long id,@RequestBody UserEditTypeDTO userEditTypeDTO) {
+        Integer type = userEditTypeDTO.getType();
+        log.info("修改账号权限：{},{}", id,type);
         userService.editType(id,type);
         return Result.success();
     }
-    // TODO:该功能待测试
+
+
 
     /**
      * 用户分页查询
@@ -134,7 +128,7 @@ public class UserController {
 
         return Result.success(pageResult);
     }
-    // TODO:该功能待测试
+
 
     /**
      * 启用禁用账号
@@ -146,14 +140,14 @@ public class UserController {
         userService.startOrStop(id,status);
         return Result.success();
     }
-    // TODO:该功能待测试
+
 
     /**
      * 退出登录
      * @return
      */
     @PostMapping("/logout")
-    @ApiOperation(value="用户退出")
+    @ApiOperation(value="用户登出")
     public Result<String> logout() {
         return Result.success();
     }

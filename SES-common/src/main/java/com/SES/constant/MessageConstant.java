@@ -8,7 +8,7 @@ public class MessageConstant {
     public static final String PASSWORD_ERROR = "密码错误";
     public static final String ALREADY_EXISTS = "已存在";
     public static final String NOT_EXISTS = "不存在";
-    public static final String ACCOUNT_LOCKED = "账号被锁定";
+    public static final String ACCOUNT_LOCKED = "账号处于锁定状态";
     public static final String UNKNOWN_ERROR = "未知错误";
     public static final String USER_NOT_LOGIN = "用户未登录";
     public static final String LOGIN_FAILED = "登录失败";
@@ -18,4 +18,7 @@ public class MessageConstant {
     public static final String TOKEN_EXPIRED_TOO_LONG = "token过期时间太长";
     public static final String INVALID_TOKEN = "无效的token";
     public static final String ADMIN_CHECK_FAILED = "验证管理员权限失败";
+    public static final String INVALID_STATUS = "无效的状态";
+    public static final String INVALID_USER_TYPE = "无效的账号类型";
+    public static final String ADMIN_COULD_NOT_EDIT_SELF = "管理员禁止操作自身";
 }

@@ -4,10 +4,10 @@ import com.SES.constant.MessageConstant;
 import com.SES.constant.StatusConstant;
 import com.SES.constant.UserTypeConstant;
 import com.SES.context.BaseContext;
-import com.SES.dto.PasswordEditDTO;
-import com.SES.dto.UserLoginDTO;
-import com.SES.dto.UserDTO;
-import com.SES.dto.UserPageQueryDTO;
+import com.SES.dto.user.PasswordEditDTO;
+import com.SES.dto.user.UserLoginDTO;
+import com.SES.dto.user.UserDTO;
+import com.SES.dto.user.UserPageQueryDTO;
 import com.SES.entity.User;
 import com.SES.exception.*;
 import com.SES.mapper.UserMapper;
@@ -129,12 +129,20 @@ public class UserServiceImpl implements UserService {
     public void editType(Long id, Integer type) {
         // 校验管理员权限
         this.checkCurrentUserIsAdmin();
+        if (id == BaseContext.getCurrentId()) {
+            //不能操作自身
+            throw new AccountNotFoundException(MessageConstant.ADMIN_COULD_NOT_EDIT_SELF);
+        }
 
         User user = userMapper.getById(id);
 
         if (user == null) {
             //账号不存在
             throw new AccountNotFoundException("账号"+MessageConstant.NOT_EXISTS);
+        }
+        if (!(type == UserTypeConstant.ADMIN || type == UserTypeConstant.NORMAL)) {
+            // 无效的类型
+            throw new AccountNotFoundException(MessageConstant.INVALID_USER_TYPE);
         }
 
         user.setType(type);
@@ -171,12 +179,21 @@ public class UserServiceImpl implements UserService {
     public void startOrStop(Long id, Integer status) {
         // 校验管理员权限
         this.checkCurrentUserIsAdmin();
+        if (id == BaseContext.getCurrentId()) {
+            //不能操作自身
+            throw new AccountNotFoundException(MessageConstant.ADMIN_COULD_NOT_EDIT_SELF);
+        }
+
 
         User user = userMapper.getById(id);
 
         if (user == null) {
             //账号不存在
             throw new AccountNotFoundException("账号"+MessageConstant.NOT_EXISTS);
+        }
+        if (!(status == StatusConstant.ENABLE || status == StatusConstant.DISABLE)) {
+            // 无效的状态
+            throw new AccountNotFoundException(MessageConstant.INVALID_STATUS);
         }
 
         user.setStatus(status);

@@ -1,4 +1,4 @@
-package com.SES.dto;
+package com.SES.dto.user;
 
 import lombok.Data;
 

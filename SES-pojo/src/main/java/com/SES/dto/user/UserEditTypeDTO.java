@@ -1,4 +1,4 @@
-package com.SES.dto;
+package com.SES.dto.user;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -11,12 +11,8 @@ import java.io.Serializable;
  */
 @Data
 @ApiModel(description = "用户登录时传递的数据模型")
-public class UserLoginDTO implements Serializable {
+public class UserEditTypeDTO implements Serializable {
 
-    @ApiModelProperty("用户名")
-    private String username;
-
-    @ApiModelProperty("密码")
-    private String password;
+    private Integer type;
 
 }

@@ -10,7 +10,7 @@
                 and username like concat('%',#{username},'%')
             </if>
         </where>
-        order by create_time desc
+        order by createtime desc
     </select>
 
     <update id="update" parameterType="User">
@@ -19,7 +19,11 @@
             <if test="username != null">username = #{username},</if>
             <if test="password != null">password = #{password},</if>
             <if test="status != null">status = #{status},</if>
-            <if test="type != null">status = #{type},</if>
+            <if test="type != null">type = #{type},</if>
+            <if test="createTime != null">createtime = #{updateTime},</if>
+            <if test="createUser != null">create_user = #{updateUser},</if>
+            <if test="updateTime != null">updatetime = #{updateTime},</if>
+            <if test="updateUser != null">update_user = #{updateUser},</if>
         </set>
         where id = #{id}
     </update>

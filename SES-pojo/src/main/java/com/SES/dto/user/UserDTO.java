@@ -1,7 +1,6 @@
-package com.SES.dto;
+package com.SES.dto.user;
 
 import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 import java.io.Serializable;

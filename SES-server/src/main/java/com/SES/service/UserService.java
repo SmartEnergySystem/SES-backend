@@ -1,9 +1,9 @@
 package com.SES.service;
 
-import com.SES.dto.PasswordEditDTO;
-import com.SES.dto.UserLoginDTO;
-import com.SES.dto.UserDTO;
-import com.SES.dto.UserPageQueryDTO;
+import com.SES.dto.user.PasswordEditDTO;
+import com.SES.dto.user.UserLoginDTO;
+import com.SES.dto.user.UserDTO;
+import com.SES.dto.user.UserPageQueryDTO;
 import com.SES.entity.User;
 import com.SES.result.PageResult;
 

@@ -1,13 +1,11 @@
 package com.SES.mapper;
 
 import com.SES.annotation.AutoFill;
-import com.SES.dto.UserPageQueryDTO;
+import com.SES.dto.user.UserPageQueryDTO;
 import com.SES.entity.User;
 import com.SES.enumeration.OperationType;
 import com.github.pagehelper.Page;
 import org.apache.ibatis.annotations.*;
-
-import java.util.List;
 
 @Mapper
 public interface UserMapper {
@@ -32,9 +30,9 @@ public interface UserMapper {
      * 插入用户
      * @param user 用户对象
      */
-    @Insert("insert into user (username, password, status , type) " +
+    @Insert("insert into user (username, password, status , type,createtime, updatetime, create_user, update_user) " +
             "values " +
-            "(#{username},#{password},#{status},#{type})")
+            "(#{username},#{password},#{status},#{type},#{createTime},#{updateTime},#{createUser},#{updateUser})")
     @AutoFill(OperationType.INSERT)
     void insert(User user);
 

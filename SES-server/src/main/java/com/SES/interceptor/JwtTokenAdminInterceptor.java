@@ -60,12 +60,13 @@ public class JwtTokenAdminInterceptor implements HandlerInterceptor {
             Claims claims = JwtUtil.parseJWT(jwtProperties.getAdminSecretKey(), token);
 
             //从 Claims 中提取用户 ID,存储到线程上下文 BaseContext 中，供后续业务逻辑使用.
-            Long empId = Long.valueOf(claims.get(JwtClaimsConstant.USER_ID).toString());
-            log.info("当前用户id：{}", empId);
-            BaseContext.setCurrentId(empId);
+            Long userId = Long.valueOf(claims.get(JwtClaimsConstant.USER_ID).toString());
+            log.info("当前用户id：{}", userId);
+            BaseContext.setCurrentId(userId);
             //3、通过，放行
             return true;
         } catch (Exception ex) {
+
             //4、不通过，响应401状态码
             response.setStatus(401);
             return false;
