@@ -4,11 +4,14 @@ import com.SES.dto.device.*;
 import com.SES.result.PageResult;
 import com.SES.result.Result;
 import com.SES.service.DeviceService;
+import com.SES.vo.DeviceModeVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * 设备管理
@@ -43,14 +46,14 @@ public class DeviceController {
 
     /**
      * 删除设备
-     * @param deviceDeleteDTO
+     * @param id
      * @return
      */
-    @DeleteMapping
+    @DeleteMapping("/{id}")
     @ApiOperation(value = "删除设备")
-    public Result<String> deleteDevice(@RequestBody DeviceDeleteDTO deviceDeleteDTO) {
-        log.info("删除设备：{}", deviceDeleteDTO);
-        deviceService.deleteDevice(deviceDeleteDTO);
+    public Result<String> deleteDevice(@PathVariable Long id) {
+        log.info("删除设备：{}", id);
+        deviceService.deleteDevice(id);
         return Result.success();
     }
 
@@ -65,6 +68,19 @@ public class DeviceController {
         log.info("分页查询设备：{}", devicePageQueryDTO);
         PageResult pageResult = deviceService.pageQuery(devicePageQueryDTO);
         return Result.success(pageResult);
+    }
+
+    /**
+     * 根据id查询设备模式
+     * @param id
+     * @return
+     */
+    @GetMapping("/{id}/mode")
+    @ApiOperation(value = "根据id查询设备模式")
+    public Result<List<DeviceModeVO>> getModeByDeviceId(@PathVariable Long id) {
+        log.info("根据id查询设备模式：{}", id);
+       List<DeviceModeVO> result= deviceService.getModeByDeviceId(id);
+        return Result.success(result);
     }
 
     /**

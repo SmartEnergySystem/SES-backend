@@ -15,6 +15,7 @@ public interface DeviceMapper {
     @Insert("INSERT INTO device (user_id, name, last_known_status) " +
             "VALUES"+
             " (#{userId}, #{name}, #{lastKnownStatus})")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
     void insert(Device device);
 
     /**

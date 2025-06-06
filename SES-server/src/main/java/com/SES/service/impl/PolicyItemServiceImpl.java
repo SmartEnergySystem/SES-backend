@@ -55,6 +55,8 @@ public class PolicyItemServiceImpl implements PolicyItemService {
             throw new BaseException("无权限操作此策略");
         }
 
+        //TODO：验证：不同条目的时间范围不能重叠
+
         PolicyItem policyItem = new PolicyItem();
         policyItem.setPolicyId(policyItemDTO.getPolicyId());
         policyItem.setStartTime(policyItemDTO.getStartTime());
@@ -147,6 +149,8 @@ public class PolicyItemServiceImpl implements PolicyItemService {
         if (device == null) {
             throw new BaseException("无权限操作此策略条目");
         }
+
+        //TODO：验证：不同条目的时间范围不能重叠
 
         // 更新策略条目信息
         if (policyItemEditDTO.getStartTime() != null) {

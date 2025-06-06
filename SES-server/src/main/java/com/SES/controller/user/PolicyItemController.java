@@ -1,4 +1,4 @@
-package com.SES.controller.admin;
+package com.SES.controller.user;
 
 import com.SES.dto.policyItem.PolicyItemDTO;
 import com.SES.dto.policyItem.PolicyItemEditDTO;

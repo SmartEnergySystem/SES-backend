@@ -26,7 +26,7 @@ public class Device implements Serializable {
 
     private Long lastKnownModeId;
 
-    private Long defaultModeId;
+    private String defaultModeName;
 
     private Long policyId; // 可为空
 

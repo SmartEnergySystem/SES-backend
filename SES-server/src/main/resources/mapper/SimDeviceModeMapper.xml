@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.SES.mapper.SimDeviceModeMapper">
+    <!-- 更新模拟设备模式（动态字段更新） -->
+    <update id="update" parameterType="com.SES.entity.SimDeviceMode">
+        UPDATE sim_device_mode
+        <set>
+            <if test="name != null">
+                name = #{name},
+            </if>
+            <if test="power != null">
+                power = #{power},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+</mapper>

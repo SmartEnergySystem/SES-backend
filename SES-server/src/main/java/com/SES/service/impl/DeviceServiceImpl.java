@@ -1,16 +1,19 @@
 package com.SES.service.impl;
 
+import com.SES.constant.DeviceStatusConstant;
 import com.SES.context.BaseContext;
 import com.SES.dto.device.*;
-import com.SES.entity.Device;
-import com.SES.entity.OperationLog;
-import com.SES.entity.User;
+import com.SES.dto.deviceApi.DeviceInitApiResultDTO;
+import com.SES.entity.*;
 import com.SES.exception.BaseException;
 import com.SES.mapper.DeviceMapper;
+import com.SES.mapper.DeviceModeMapper;
 import com.SES.mapper.OperationLogMapper;
 import com.SES.mapper.UserMapper;
 import com.SES.result.PageResult;
+import com.SES.service.DeviceApiService;
 import com.SES.service.DeviceService;
+import com.SES.vo.DeviceModeVO;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +36,12 @@ public class DeviceServiceImpl implements DeviceService {
     @Autowired
     private UserMapper userMapper;
 
+    @Autowired
+    private DeviceModeMapper deviceModeMapper;
+
+    @Autowired
+    private DeviceApiService deviceApiService;
+
     /**
      * 新增设备
      * @param deviceDTO
@@ -49,34 +58,46 @@ public class DeviceServiceImpl implements DeviceService {
         Device device = new Device();
         device.setUserId(currentUserId);
         device.setName(deviceDTO.getName());
-        device.setLastKnownStatus(0); // 默认状态为关闭
-
-        log.info("准备插入设备：{}", device);
-
-        // TODO: 根据设备类型(deviceDTO.getType())初始化设备的默认模式等信息
-        // 这里需要实现内置设备类型的生成函数
-        // 调用设备初始化api，获得默认模式、各模式信息，然后插入设备模式表
-
+        device.setLastKnownStatus(DeviceStatusConstant.OFF); // 默认状态为关闭
         deviceMapper.insert(device);
+
+        // 根据设备类型初始化设备
+        Long deviceId = device.getId(); // 插入后自动写回主键，供这里使用
+        DeviceInitApiResultDTO deviceInitApiResultDTO = deviceApiService.deviceInitApi(deviceId, deviceDTO.getType());
+
+        // 插入模式表
+        List<String>  modeList = deviceInitApiResultDTO.getModeList();
+        for (String modeName : modeList) {
+            DeviceMode deviceMode = new DeviceMode();
+            deviceMode.setDeviceId(deviceId);
+            deviceMode.setName(modeName);
+
+            deviceModeMapper.insert(deviceMode);
+        }
+
+        // 回填默认模式名
+        device.setDefaultModeName(deviceInitApiResultDTO.getDefaultModeName());
+        deviceMapper.update(device);
+
         log.info("用户{}新增设备成功：{}", currentUserId, deviceDTO.getName());
     }
 
     /**
      * 删除设备
-     * @param deviceDeleteDTO
+     * @param id
      */
     @Override
-    public void deleteDevice(DeviceDeleteDTO deviceDeleteDTO) {
+    public void deleteDevice(Long id) {
         Long currentUserId = BaseContext.getCurrentId();
-        Long deviceId = deviceDeleteDTO.getId();
 
         // 验证设备是否属于当前用户
-        Device device = deviceMapper.getByIdAndUserId(deviceId, currentUserId);
+        Device device = deviceMapper.getByIdAndUserId(id, currentUserId);
         if (device == null) {
             throw new BaseException("设备不存在或无权限操作");
         }
 
-        deviceMapper.deleteById(deviceId);
+
+        deviceMapper.deleteById(id);
 
         // TODO: 补充级联删除
         // 因为使用逻辑外键，应该级联删除模式表、策略表、模拟设备表和模拟设备模式表
@@ -104,6 +125,24 @@ public class DeviceServiceImpl implements DeviceService {
         List<Device> records = page.getResult();
         
         return new PageResult(total, records);
+    }
+
+    /**
+     * 根据id查询设备模式
+     * @param id
+     * @return
+     */
+    @Override
+    public List<DeviceModeVO> getModeByDeviceId(Long id) {
+        Long currentUserId = BaseContext.getCurrentId();
+
+        // 验证设备是否属于当前用户
+        Device device = deviceMapper.getByIdAndUserId(id, currentUserId);
+        if (device == null) {
+            throw new BaseException("设备不存在或无权限操作");
+        }
+
+        return deviceModeMapper.getVOByDeviceId(device.getId());
     }
 
     /**
@@ -149,6 +188,7 @@ public class DeviceServiceImpl implements DeviceService {
             // 应用策略
             device.setPolicyId(devicePolicyEditDTO.getPolicyId());
         }
+        //TODO: 验证：该策略id的策略，必须属于当前设备
 
         deviceMapper.update(device);
         
@@ -174,12 +214,16 @@ public class DeviceServiceImpl implements DeviceService {
             throw new BaseException("设备不存在或无权限操作");
         }
 
-        // TODO：修正逻辑
-        // 不应该setLastKnownStatus，这是设备监测类自动完成的
-        // editDeviceStatus直接调用设备控制api即可
-        device.setLastKnownStatus(deviceStatusEditDTO.getStatus());
-        deviceMapper.update(device);
-        
+        Integer status = deviceStatusEditDTO.getStatus();
+        // 如果开机，设置为默认模式
+        String modeName = (status == DeviceStatusConstant.ON)
+                ? device.getDefaultModeName()
+                : null;
+
+        // 调用设备控制Api
+        deviceApiService.deviceControlApi(id,status,modeName);
+
+        // TODO:修改日志函数
         // 记录操作日志
         recordOperationLog(currentUserId, device, null, 
                           deviceStatusEditDTO.getStatus(), null, null);
@@ -202,12 +246,17 @@ public class DeviceServiceImpl implements DeviceService {
             throw new BaseException("设备不存在或无权限操作");
         }
 
-        // TODO：修正逻辑
-        // 同上，不应该setLastKnownModeId
-        // 直接调用设备控制api即可
-        device.setLastKnownModeId(deviceModeEditDTO.getModeId());
-        deviceMapper.update(device);
-        
+        // 获取模式名
+        DeviceMode deviceMode = deviceModeMapper.getById(deviceModeEditDTO.getModeId());
+        if (deviceMode == null) {
+            throw new BaseException("设备模式不存在");
+        }
+        String modeName = deviceMode.getName();
+
+        // 调用设备控制Api
+        deviceApiService.deviceControlApi(id, null,modeName);
+
+        // TODO:修改日志函数
         // 记录操作日志
         recordOperationLog(currentUserId, device, null, 
                           null, deviceModeEditDTO.getModeId(), null);
@@ -240,29 +289,40 @@ public class DeviceServiceImpl implements DeviceService {
                 device.setPolicyId(deviceControlDTO.getPolicyId());
             }
         }
+        //TODO: 验证：该策略id的策略，必须属于当前设备
 
-        // TODO：修正逻辑
-        // 同上，直接调用设备控制api即可
 
-        // 处理状态
-        if (deviceControlDTO.getStatus() != null) {
-            device.setLastKnownStatus(deviceControlDTO.getStatus());
+        // 处理状态和模式
+        Integer status = deviceControlDTO.getStatus();
+        String modeName = null;
+
+        // 获取模式名
+        Long modeId = deviceControlDTO.getModeId();
+        if (modeId != null) {
+            DeviceMode deviceMode = deviceModeMapper.getById(deviceControlDTO.getModeId());
+            if (deviceMode == null) {
+                throw new BaseException("设备模式不存在");
+            }
+            modeName = deviceMode.getName();
+        }
+        else if (status == DeviceStatusConstant.ON) {
+            // 如果开机，设置为默认模式
+            modeName = device.getDefaultModeName();
         }
 
-        // 处理模式
-        if (deviceControlDTO.getModeId() != null) {
-            device.setLastKnownModeId(deviceControlDTO.getModeId());
-        }
-
-        deviceMapper.update(device);
+        // 调用设备控制Api
+        deviceApiService.deviceControlApi(id,status,modeName);
         
         // 记录操作日志
+        // TODO:修改日志函数
         recordOperationLog(currentUserId, device, deviceControlDTO.getIsApplyPolicy(), 
                           deviceControlDTO.getStatus(), deviceControlDTO.getModeId(), 
                           deviceControlDTO.getPolicyId());
         
         log.info("用户{}综合控制设备{}", currentUserId, id);
     }
+
+
 
     /**
      * 记录操作日志

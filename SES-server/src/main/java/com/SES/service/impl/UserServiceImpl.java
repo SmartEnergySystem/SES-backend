@@ -15,6 +15,7 @@ import com.SES.result.PageResult;
 import com.SES.service.UserService;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ import org.springframework.util.DigestUtils;
 import java.util.List;
 
 @Service
+@Slf4j
 public class UserServiceImpl implements UserService {
 
     @Autowired
@@ -100,6 +102,7 @@ public class UserServiceImpl implements UserService {
         String oldPassword = passwordEditDTO.getOldPassword();
         String newPassword = passwordEditDTO.getNewPassword();
 
+        // 根据id查询对应数据
         User user = userMapper.getById(currentUserId);
 
         if (user == null) {

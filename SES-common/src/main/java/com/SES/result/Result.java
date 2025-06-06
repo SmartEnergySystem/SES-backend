@@ -5,7 +5,8 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * 后端统一返回结果
+ * 对返回结果的封装
+ * 一般只用在controller层，其他层不必封装
  * @param <T>
  */
 @Data

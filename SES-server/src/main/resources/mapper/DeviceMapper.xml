@@ -28,8 +28,8 @@
             <if test="lastKnownModeId != null">
                 last_known_mode_id = #{lastKnownModeId},
             </if>
-            <if test="defaultModeId != null">
-                default_mode_id = #{defaultModeId},
+            <if test="defaultModeName != null">
+                default_mode_name = #{defaultModeName},
             </if>
             <if test="policyId != null">
                 policy_id = #{policyId},

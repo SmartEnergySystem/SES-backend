@@ -2,6 +2,9 @@ package com.SES.service;
 
 import com.SES.dto.device.*;
 import com.SES.result.PageResult;
+import com.SES.vo.DeviceModeVO;
+
+import java.util.List;
 
 public interface DeviceService {
 
@@ -13,9 +16,9 @@ public interface DeviceService {
 
     /**
      * 删除设备
-     * @param deviceDeleteDTO
+     * @param id
      */
-    void deleteDevice(DeviceDeleteDTO deviceDeleteDTO);
+    void deleteDevice(Long id);
 
     /**
      * 分页查询设备
@@ -58,4 +61,11 @@ public interface DeviceService {
      * @param deviceControlDTO
      */
     void editDevice(Long id, DeviceControlDTO deviceControlDTO);
+
+    /**
+     * 根据id查询设备模式
+     * @param id
+     * @return
+     */
+    List<DeviceModeVO> getModeByDeviceId(Long id);
 }
