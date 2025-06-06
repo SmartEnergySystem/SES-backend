@@ -55,6 +55,7 @@ public class DeviceServiceImpl implements DeviceService {
 
         // TODO: 根据设备类型(deviceDTO.getType())初始化设备的默认模式等信息
         // 这里需要实现内置设备类型的生成函数
+        // 调用设备初始化api，获得默认模式、各模式信息，然后插入设备模式表
 
         deviceMapper.insert(device);
         log.info("用户{}新增设备成功：{}", currentUserId, deviceDTO.getName());
@@ -76,6 +77,10 @@ public class DeviceServiceImpl implements DeviceService {
         }
 
         deviceMapper.deleteById(deviceId);
+
+        // TODO: 补充级联删除
+        // 因为使用逻辑外键，应该级联删除模式表、策略表、模拟设备表和模拟设备模式表
+
         log.info("用户{}删除设备：{}", currentUserId, device.getName());
     }
 
@@ -169,6 +174,9 @@ public class DeviceServiceImpl implements DeviceService {
             throw new BaseException("设备不存在或无权限操作");
         }
 
+        // TODO：修正逻辑
+        // 不应该setLastKnownStatus，这是设备监测类自动完成的
+        // editDeviceStatus直接调用设备控制api即可
         device.setLastKnownStatus(deviceStatusEditDTO.getStatus());
         deviceMapper.update(device);
         
@@ -194,6 +202,9 @@ public class DeviceServiceImpl implements DeviceService {
             throw new BaseException("设备不存在或无权限操作");
         }
 
+        // TODO：修正逻辑
+        // 同上，不应该setLastKnownModeId
+        // 直接调用设备控制api即可
         device.setLastKnownModeId(deviceModeEditDTO.getModeId());
         deviceMapper.update(device);
         
@@ -230,6 +241,9 @@ public class DeviceServiceImpl implements DeviceService {
             }
         }
 
+        // TODO：修正逻辑
+        // 同上，直接调用设备控制api即可
+
         // 处理状态
         if (deviceControlDTO.getStatus() != null) {
             device.setLastKnownStatus(deviceControlDTO.getStatus());
@@ -253,6 +267,7 @@ public class DeviceServiceImpl implements DeviceService {
     /**
      * 记录操作日志
      */
+    // TODO: 等log类写好了改到真正的log类
     private void recordOperationLog(Long userId, Device device, Integer isApplyPolicy, 
                                    Integer status, Long modeId, Long policyId) {
         try {

@@ -78,6 +78,8 @@ public class PolicyServiceImpl implements PolicyService {
         }
 
         policyMapper.deleteById(id);
+        // TODO: 补充级联删除
+        // 因为使用逻辑外键，应该级联删除策略条目表
         log.info("用户{}删除策略：{}", currentUserId, policy.getName());
     }
 
@@ -142,6 +144,8 @@ public class PolicyServiceImpl implements PolicyService {
         }
 
         policyMapper.deleteByDeviceId(deviceId);
+        // TODO: 补充级联删除
+        // 因为使用逻辑外键，应该级联删除策略条目表
         log.info("用户{}删除设备{}的所有策略", currentUserId, deviceId);
     }
 }
