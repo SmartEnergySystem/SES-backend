@@ -30,6 +30,7 @@ spring:
   main:
     allow-circular-references: true
   datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
     druid:
       driver-class-name: ${SES.datasource.driver-class-name}
       url: jdbc:mysql://${SES.datasource.host}:${SES.datasource.port}/${SES.datasource.database}?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
@@ -55,7 +56,6 @@ logging:
         mapper: debug
         service: info
         controller: info
-
 
 
 
