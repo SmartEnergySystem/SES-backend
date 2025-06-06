@@ -5,11 +5,11 @@ server:
 SES:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    host: 172.26.105.159
+    host: rm-cn-kjp4akl9e00053o.rwlb.rds.aliyuncs.com
     port: 3306
     database: smart_device_db
-    username: dev_user
-    password: StrongPassword123!
+    username: testuser
+    password: 123456Test@
 
 
   jwt: # 设置jwt签名加密时使用的秘钥
