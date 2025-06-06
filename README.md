@@ -36,7 +36,7 @@ interceptor：拦截器，检测jwt令牌
 3.SES-common模块：
 包含各种常量与工具类
 
-Result：所有函数返回值的统一封装。若有需要返回的数据，先放入result中（调用有参构造函数）
+Result：对返回结果的封装，一般只用在controller层，其他层不必封装。若有需要返回的数据，先放入result中（调用有参构造函数）
 PageResult：分页查询的返回值封装
 
 
