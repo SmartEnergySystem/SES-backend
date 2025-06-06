@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class OperationLog implements Serializable {
+public class AlertLog implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -28,15 +28,15 @@ public class OperationLog implements Serializable {
 
     private LocalDateTime time;
 
-    private Integer isApplyPolicy; // 可为空
+    private Integer level; // 0=预警, 1=警告, 2=严重警告
 
-    private Integer status; // 可为空
+    private Integer status;
 
-    private String modeName; // 可为空
+    private String modeName;
 
     private String policyName; // 可为空
 
-    private String policy; // JSON 格式，可为空
+    private String policy; // JSON 格式
 
-    private String batchName; // 可为空
+    private String message;
 }

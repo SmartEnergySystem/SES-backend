@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Device implements Serializable {
+public class Batch implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -22,15 +22,7 @@ public class Device implements Serializable {
 
     private String name;
 
-    private Integer lastKnownStatus; // 0=关闭，1=开启，-1=异常或损坏
+    private LocalDateTime createtime;
 
-    private Long lastKnownModeId;
-
-    private Long defaultModeId;
-
-    private Long policyId; // 可为空
-
-    private LocalDateTime createTime;
-
-    private LocalDateTime updateTime;
+    private LocalDateTime updatetime;
 }

@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class OperationLog implements Serializable {
+public class DeviceLog implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -26,17 +26,19 @@ public class OperationLog implements Serializable {
 
     private String deviceName; // 冗余信息
 
-    private LocalDateTime time;
+    private LocalDateTime startTime;
 
-    private Integer isApplyPolicy; // 可为空
+    private LocalDateTime endTime;
 
-    private Integer status; // 可为空
+    private Integer status;
 
-    private String modeName; // 可为空
+    private String modeName;
 
     private String policyName; // 可为空
 
-    private String policy; // JSON 格式，可为空
+    private String policy; // JSON 格式，冗余信息
 
-    private String batchName; // 可为空
+    private Integer power; // 单位：W
+
+    private Integer energyConsumption; // 单位：kWh
 }
