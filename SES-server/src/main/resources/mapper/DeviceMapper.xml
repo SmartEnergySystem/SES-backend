@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.SES.mapper.DeviceMapper">
+
+    <!-- 分页查询设备 -->
+    <select id="pageQuery" resultType="com.SES.entity.Device">
+        SELECT * FROM device
+        <where>
+            user_id = #{userId}
+            <if test="name != null and name != ''">
+                AND name LIKE CONCAT('%', #{name}, '%')
+            </if>
+        </where>
+        ORDER BY id DESC
+    </select>
+
+    <!-- 动态更新设备 -->
+    <update id="update" parameterType="com.SES.entity.Device">
+        UPDATE device
+        <set>
+            <if test="name != null and name != ''">
+                name = #{name},
+            </if>
+            <if test="lastKnownStatus != null">
+                last_known_status = #{lastKnownStatus},
+            </if>
+            <if test="lastKnownModeId != null">
+                last_known_mode_id = #{lastKnownModeId},
+            </if>
+            <if test="defaultModeId != null">
+                default_mode_id = #{defaultModeId},
+            </if>
+            <if test="policyId != null">
+                policy_id = #{policyId},
+            </if>
+            <!-- 处理策略解绑的情况 -->
+            <if test="policyId == null">
+                policy_id = NULL,
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+</mapper>
