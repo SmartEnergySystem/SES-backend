@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.SES.mapper.BatchMapper">
+
+    <select id="pageQuery" resultType="com.SES.entity.Batch">
+        SELECT * FROM batch
+        WHERE user_id = #{userId}
+        <if test="name != null and name != ''">
+            AND name LIKE CONCAT('%', #{name}, '%')
+        </if>
+        ORDER BY createtime DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+</mapper>
