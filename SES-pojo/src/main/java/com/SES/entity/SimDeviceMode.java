@@ -21,5 +21,5 @@ public class SimDeviceMode implements Serializable {
 
     private String name;
 
-    private Integer power; // 单位：W
+    private Float power; // 单位：W
 }

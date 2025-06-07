@@ -38,7 +38,7 @@ public class DeviceLog implements Serializable {
 
     private String policy; // JSON 格式，冗余信息
 
-    private Integer power; // 单位：W
+    private Float power; // 单位：W
 
     private Integer energyConsumption; // 单位：kWh
 }
