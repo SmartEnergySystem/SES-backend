@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.SES.mapper.BatchItemMapper">
+
+    <!-- 动态更新批量操作条目 -->
+    <update id="update" parameterType="com.SES.entity.BatchItem">
+        UPDATE batch_item
+        <set>
+            <if test="deviceId != null">
+                device_id = #{deviceId},
+            </if>
+            <if test="isApplyPolicy != null">
+                isApplyPolicy = #{isApplyPolicy},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+            <if test="modeId != null">
+                mode_id = #{modeId},
+            </if>
+            <if test="policyId != null">
+                policy_id = #{policyId},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+</mapper>
