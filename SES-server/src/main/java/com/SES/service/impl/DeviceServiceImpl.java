@@ -100,7 +100,8 @@ public class DeviceServiceImpl implements DeviceService {
         deviceMapper.deleteById(id);
 
         // TODO: 补充级联删除
-        // 因为使用逻辑外键，应该级联删除模式表、策略表、模拟设备表和模拟设备模式表
+        // 因为使用逻辑外键，应该级联删除模式表、策略表、模拟设备表和模拟设备模式表，以及策略表、策略条目表
+        // 使用服务层的删除函数，而不是一次性操控多个mapper
 
         log.info("用户{}删除设备：{}", currentUserId, device.getName());
     }

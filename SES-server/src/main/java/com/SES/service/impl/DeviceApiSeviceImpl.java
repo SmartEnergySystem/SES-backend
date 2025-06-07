@@ -57,12 +57,12 @@ public class DeviceApiSeviceImpl implements DeviceApiService {
 
         // 3.填写模拟设备模式表
         List<String> modeList = typeInfo.getModeList();
-        List<Integer> powerList = typeInfo.getPowerList();
+        List<Float> powerList = typeInfo.getPowerList();
 
         // 遍历每个模式
         for (int idx = 0; idx < modeList.size(); idx++) {
             String modeName = modeList.get(idx);
-            Integer power = powerList.get(idx);
+            Float power = powerList.get(idx);
 
             SimDeviceMode simDeviceMode = new SimDeviceMode();
 
@@ -124,7 +124,7 @@ public class DeviceApiSeviceImpl implements DeviceApiService {
 
         // 关机
         if (status == 0) {
-            deviceQueryApiResultDTO.setPower(0);
+            deviceQueryApiResultDTO.setPower(0.0f);
             return deviceQueryApiResultDTO;
         }
 
@@ -157,7 +157,7 @@ public class DeviceApiSeviceImpl implements DeviceApiService {
         TypeInfo info = new TypeInfo();
 
         List<String> modeList = new ArrayList<>();
-        List<Integer> powerList = new ArrayList<>();
+        List<Float> powerList = new ArrayList<>();
 
         switch (type) {
             case "空调":
@@ -171,7 +171,7 @@ public class DeviceApiSeviceImpl implements DeviceApiService {
                         "除湿模式",
                         "送风模式"
                 ));
-                powerList.addAll(Arrays.asList(800, 1000, 1200, 1400, 1500, 600, 200));
+                powerList.addAll(Arrays.asList(800.0f, 1000.0f, 1200.0f, 1400.0f, 1500.0f, 600.0f, 200.0f));
                 break;
 
             case "冰箱":
@@ -179,57 +179,57 @@ public class DeviceApiSeviceImpl implements DeviceApiService {
                 modeList.add("正常运行");
                 modeList.add("快速冷冻");
                 modeList.add("节能模式");
-                powerList.add(150);
-                powerList.add(300);
-                powerList.add(100);
+                powerList.add(150.0f);
+                powerList.add(300.0f);
+                powerList.add(100.0f);
                 break;
 
             case "洗衣机":
                 info.setDefaultModeName("标准洗");
                 modeList.addAll(Arrays.asList("标准洗", "快速洗", "强力洗", "脱水模式"));
-                powerList.addAll(Arrays.asList(500, 400, 600, 300));
+                powerList.addAll(Arrays.asList(500.0f, 400.0f, 600.0f, 300.0f));
                 break;
 
             case "电视机":
                 info.setDefaultModeName("标准模式");
                 modeList.addAll(Arrays.asList("高亮度模式", "标准模式", "节能模式"));
-                powerList.addAll(Arrays.asList(120, 80, 50));
+                powerList.addAll(Arrays.asList(120.0f, 80.0f, 50.0f));
                 break;
 
             case "微波炉":
                 info.setDefaultModeName("高火加热");
                 modeList.addAll(Arrays.asList("高火加热", "中火加热", "解冻模式", "保温模式"));
-                powerList.addAll(Arrays.asList(1200, 800, 600, 300));
+                powerList.addAll(Arrays.asList(1200.0f, 800.0f, 600.0f, 300.0f));
                 break;
 
             case "电热水器":
                 info.setDefaultModeName("加热模式");
                 modeList.addAll(Arrays.asList("加热模式", "保温模式", "快速加热"));
-                powerList.addAll(Arrays.asList(1500, 200, 2000));
+                powerList.addAll(Arrays.asList(1500.0f, 200.0f, 2000.0f));
                 break;
 
             case "吸尘器":
                 info.setDefaultModeName("高功率吸尘");
                 modeList.addAll(Arrays.asList("高功率吸尘", "中功率吸尘", "节能模式"));
-                powerList.addAll(Arrays.asList(1200, 800, 500));
+                powerList.addAll(Arrays.asList(1200.0f, 800.0f, 500.0f));
                 break;
 
             case "电风扇":
                 info.setDefaultModeName("中速模式");
                 modeList.addAll(Arrays.asList("高速模式", "中速模式", "低速模式"));
-                powerList.addAll(Arrays.asList(60, 40, 20));
+                powerList.addAll(Arrays.asList(60.0f, 40.0f, 20.0f));
                 break;
 
             case "电饭煲":
                 info.setDefaultModeName("煮饭模式");
                 modeList.addAll(Arrays.asList("煮饭模式", "保温模式", "快煮模式"));
-                powerList.addAll(Arrays.asList(700, 50, 900));
+                powerList.addAll(Arrays.asList(700.0f, 50.0f, 900.0f));
                 break;
 
             case "空气净化器":
                 info.setDefaultModeName("标准净化");
                 modeList.addAll(Arrays.asList("高效净化", "标准净化", "睡眠模式"));
-                powerList.addAll(Arrays.asList(80, 50, 20));
+                powerList.addAll(Arrays.asList(80.0f, 50.0f, 20.0f));
                 break;
 
             case "LED灯":
@@ -240,7 +240,7 @@ public class DeviceApiSeviceImpl implements DeviceApiService {
                         "柔光模式（30%亮度）",
                         "夜灯模式（10%亮度）"
                 ));
-                powerList.addAll(Arrays.asList(60, 36, 18, 6));
+                powerList.addAll(Arrays.asList(60.0f, 36.0f, 18.0f, 6.0f));
                 break;
 
             default:
@@ -249,7 +249,7 @@ public class DeviceApiSeviceImpl implements DeviceApiService {
 
         // 统一添加故障模式
         modeList.addAll(Arrays.asList("故障（短路）", "故障（设备故障）"));
-        powerList.addAll(Arrays.asList(9999, 0));
+        powerList.addAll(Arrays.asList(9999.0f, 0.0f));
 
         // 最后再设置回 info 对象中
         info.setModeList(modeList);
@@ -257,6 +257,7 @@ public class DeviceApiSeviceImpl implements DeviceApiService {
 
         return info;
     }
+
 
     /**
      * 内部使用的辅助类，用于封装模式返回结果，包括功率
@@ -267,6 +268,6 @@ public class DeviceApiSeviceImpl implements DeviceApiService {
 
         private String defaultModeName;
         private List<String> modeList;
-        private List<Integer> powerList;
+        private List<Float> powerList;
     }
 }

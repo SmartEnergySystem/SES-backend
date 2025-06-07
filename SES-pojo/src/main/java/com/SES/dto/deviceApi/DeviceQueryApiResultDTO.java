@@ -21,5 +21,5 @@ public class DeviceQueryApiResultDTO implements Serializable {
     private String modeName;
 
     @ApiModelProperty("当前功率")
-    private Integer power;
+    private Float power;
 }
