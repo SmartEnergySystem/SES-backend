@@ -3,6 +3,7 @@ package com.SES.service;
 import com.SES.dto.policy.PolicyDTO;
 import com.SES.dto.policy.PolicyNameEditDTO;
 import com.SES.entity.Policy;
+import com.SES.vo.PolicyVO;
 
 import java.util.List;
 
@@ -25,7 +26,7 @@ public interface PolicyService {
      * @param deviceId
      * @return
      */
-    List<Policy> getPoliciesByDeviceId(Long deviceId);
+    List<PolicyVO> getPoliciesByDeviceId(Long deviceId);
 
     /**
      * 修改策略名称

@@ -53,4 +53,18 @@ public class BatchController {
         batchService.editBatchName(id, nameEditDTO);
         return Result.success();
     }
+
+    @PostMapping("/{id}/apply")
+    @ApiOperation("应用批量操作")
+    public Result<String> applyBatch(@PathVariable Long id) {
+        log.info("应用批量操作, ID: {}", id);
+        try {
+            batchService.applyBatch(id);
+            log.info("批量操作应用成功");
+            return Result.success();
+        } catch (Exception e) {
+            log.error("应用批量操作失败", e);
+            return Result.error("应用批量操作失败：" + e.getMessage());
+        }
+    }
 }

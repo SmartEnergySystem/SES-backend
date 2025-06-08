@@ -1,6 +1,7 @@
 package com.SES.mapper;
 
 import com.SES.entity.SimDeviceMode;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
@@ -40,5 +41,12 @@ public interface SimDeviceModeMapper {
      */
     @Select("SELECT * FROM sim_device_mode WHERE device_id = #{deviceId} AND name = #{modeName}")
     SimDeviceMode getByDeviceIdAndModeName(Long deviceId, String modeName);
+
+    /**
+     * 根据设备id删除模拟设备模式
+     * @param deviceId
+     */
+    @Delete("DELETE FROM sim_device_mode WHERE device_id = #{deviceId}")
+    void deleteByDeviceId(Long deviceId);
 
 }

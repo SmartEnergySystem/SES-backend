@@ -3,6 +3,7 @@ package com.SES.controller.user;
 import com.SES.dto.policy.PolicyDTO;
 import com.SES.dto.policy.PolicyNameEditDTO;
 import com.SES.entity.Policy;
+import com.SES.vo.PolicyVO;
 import com.SES.result.Result;
 import com.SES.service.PolicyService;
 import io.swagger.annotations.Api;
@@ -70,10 +71,10 @@ public class PolicyController {
      */
     @GetMapping("/device/{deviceId}")
     @ApiOperation(value = "根据设备id查询策略")
-    public Result<List<Policy>> getPoliciesByDeviceId(@PathVariable Long deviceId) {
+    public Result<List<PolicyVO>> getPoliciesByDeviceId(@PathVariable Long deviceId) {
         log.info("根据设备id查询策略：{}", deviceId);
         try {
-            List<Policy> policies = policyService.getPoliciesByDeviceId(deviceId);
+            List<PolicyVO> policies = policyService.getPoliciesByDeviceId(deviceId);
             return Result.success(policies);
         } catch (Exception e) {
             log.error("查询策略失败", e);

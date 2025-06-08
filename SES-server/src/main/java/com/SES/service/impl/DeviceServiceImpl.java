@@ -6,10 +6,8 @@ import com.SES.dto.device.*;
 import com.SES.dto.deviceApi.DeviceInitApiResultDTO;
 import com.SES.entity.*;
 import com.SES.exception.BaseException;
-import com.SES.mapper.DeviceMapper;
-import com.SES.mapper.DeviceModeMapper;
-import com.SES.mapper.OperationLogMapper;
-import com.SES.mapper.UserMapper;
+import com.SES.mapper.*;
+import java.util.List;
 import com.SES.result.PageResult;
 import com.SES.service.DeviceApiService;
 import com.SES.service.DeviceService;
@@ -37,6 +35,18 @@ public class DeviceServiceImpl implements DeviceService {
 
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private PolicyMapper policyMapper;
+
+    @Autowired
+    private PolicyItemMapper policyItemMapper;
+
+    @Autowired
+    private SimDeviceMapper simDeviceMapper;
+
+    @Autowired
+    private SimDeviceModeMapper simDeviceModeMapper;
 
     @Autowired
     private DeviceModeMapper deviceModeMapper;
@@ -105,11 +115,25 @@ public class DeviceServiceImpl implements DeviceService {
         }
 
 
-        deviceMapper.deleteById(id);
+        // 级联删除相关数据
+        // 1. 删除设备的所有策略条目
+        List<Policy> policies = policyMapper.getByDeviceId(id);
+        for (Policy policy : policies) {
+            policyItemMapper.deleteByPolicyId(policy.getId());
+        }
 
-        // TODO: 补充级联删除
-        // 因为使用逻辑外键，应该级联删除模式表、策略表、模拟设备表和模拟设备模式表，以及策略表、策略条目表
-        // 使用服务层的删除函数，而不是一次性操控多个mapper
+        // 2. 删除设备的所有策略
+        policyMapper.deleteByDeviceId(id);
+
+        // 3. 删除设备的所有模式
+        deviceModeMapper.deleteByDeviceId(id);
+
+        // 4. 删除模拟设备相关数据
+        simDeviceMapper.deleteByDeviceId(id);
+        simDeviceModeMapper.deleteByDeviceId(id);
+
+        // 5. 最后删除设备本身
+        deviceMapper.deleteById(id);
 
         // 发送消息通知刷新缓存
         rabbitTemplate.convertAndSend("deviceExchange", "device.cache.refresh", "refresh");
@@ -198,9 +222,19 @@ public class DeviceServiceImpl implements DeviceService {
             device.setPolicyId(null);
         } else if (devicePolicyEditDTO.getIsApplyPolicy() == 1) {
             // 应用策略
-            device.setPolicyId(devicePolicyEditDTO.getPolicyId());
+            Long policyId = devicePolicyEditDTO.getPolicyId();
+            if (policyId != null) {
+                // 验证：该策略id的策略，必须属于当前设备
+                Policy policy = policyMapper.getById(policyId);
+                if (policy == null) {
+                    throw new BaseException("策略不存在");
+                }
+                if (!policy.getDeviceId().equals(id)) {
+                    throw new BaseException("策略不属于当前设备，无法应用");
+                }
+            }
+            device.setPolicyId(policyId);
         }
-        //TODO: 验证：该策略id的策略，必须属于当前设备
 
         deviceMapper.update(device);
         
@@ -235,9 +269,8 @@ public class DeviceServiceImpl implements DeviceService {
         // 调用设备控制Api
         deviceApiService.deviceControlApi(id,status,modeName);
 
-        // TODO:修改日志函数
         // 记录操作日志
-        recordOperationLog(currentUserId, device, null, 
+        recordOperationLog(currentUserId, device, null,
                           deviceStatusEditDTO.getStatus(), null, null);
         
         log.info("用户{}控制设备{}状态为：{}", currentUserId, id, deviceStatusEditDTO.getStatus());
@@ -268,9 +301,8 @@ public class DeviceServiceImpl implements DeviceService {
         // 调用设备控制Api
         deviceApiService.deviceControlApi(id, null,modeName);
 
-        // TODO:修改日志函数
         // 记录操作日志
-        recordOperationLog(currentUserId, device, null, 
+        recordOperationLog(currentUserId, device, null,
                           null, deviceModeEditDTO.getModeId(), null);
         
         log.info("用户{}控制设备{}模式为：{}", currentUserId, id, deviceModeEditDTO.getModeId());
@@ -298,10 +330,20 @@ public class DeviceServiceImpl implements DeviceService {
                 device.setPolicyId(null);
             } else if (deviceControlDTO.getIsApplyPolicy() == 1) {
                 // 应用策略
-                device.setPolicyId(deviceControlDTO.getPolicyId());
+                Long policyId = deviceControlDTO.getPolicyId();
+                if (policyId != null) {
+                    // 验证：该策略id的策略，必须属于当前设备
+                    Policy policy = policyMapper.getById(policyId);
+                    if (policy == null) {
+                        throw new BaseException("策略不存在");
+                    }
+                    if (!policy.getDeviceId().equals(id)) {
+                        throw new BaseException("策略不属于当前设备，无法应用");
+                    }
+                }
+                device.setPolicyId(policyId);
             }
         }
-        //TODO: 验证：该策略id的策略，必须属于当前设备
 
 
         // 处理状态和模式
@@ -326,9 +368,8 @@ public class DeviceServiceImpl implements DeviceService {
         deviceApiService.deviceControlApi(id,status,modeName);
         
         // 记录操作日志
-        // TODO:修改日志函数
-        recordOperationLog(currentUserId, device, deviceControlDTO.getIsApplyPolicy(), 
-                          deviceControlDTO.getStatus(), deviceControlDTO.getModeId(), 
+        recordOperationLog(currentUserId, device, deviceControlDTO.getIsApplyPolicy(),
+                          deviceControlDTO.getStatus(), deviceControlDTO.getModeId(),
                           deviceControlDTO.getPolicyId());
         
         log.info("用户{}综合控制设备{}", currentUserId, id);
@@ -339,12 +380,45 @@ public class DeviceServiceImpl implements DeviceService {
     /**
      * 记录操作日志
      */
-    // TODO: 等log类写好了改到真正的log类
-    private void recordOperationLog(Long userId, Device device, Integer isApplyPolicy, 
+    private void recordOperationLog(Long userId, Device device, Integer isApplyPolicy,
                                    Integer status, Long modeId, Long policyId) {
         try {
             User user = userMapper.getById(userId);
-            
+
+            // 获取实际模式名称
+            String modeName = null;
+            if (modeId != null) {
+                DeviceMode deviceMode = deviceModeMapper.getById(modeId);
+                modeName = deviceMode != null ? deviceMode.getName() : "mode_" + modeId;
+            }
+
+            // 获取实际策略名称和详情
+            String policyName = null;
+            String policyDetails = null;
+            if (policyId != null) {
+                Policy policy = policyMapper.getById(policyId);
+                if (policy != null) {
+                    policyName = policy.getName();
+                    // 获取策略详情JSON（包含策略条目信息）
+                    List<PolicyItem> policyItems = policyItemMapper.getByPolicyId(policyId);
+                    if (!policyItems.isEmpty()) {
+                        StringBuilder policyJson = new StringBuilder();
+                        policyJson.append("{\"policyName\":\"").append(policy.getName()).append("\",\"items\":[");
+                        for (int i = 0; i < policyItems.size(); i++) {
+                            PolicyItem item = policyItems.get(i);
+                            if (i > 0) policyJson.append(",");
+                            policyJson.append("{\"startTime\":\"").append(item.getStartTime())
+                                     .append("\",\"endTime\":\"").append(item.getEndTime())
+                                     .append("\",\"modeId\":").append(item.getModeId()).append("}");
+                        }
+                        policyJson.append("]}");
+                        policyDetails = policyJson.toString();
+                    }
+                } else {
+                    policyName = "policy_" + policyId;
+                }
+            }
+
             OperationLog operationLog = OperationLog.builder()
                     .userId(userId)
                     .userUsername(user != null ? user.getUsername() : "unknown")
@@ -353,12 +427,12 @@ public class DeviceServiceImpl implements DeviceService {
                     .time(LocalDateTime.now())
                     .isApplyPolicy(isApplyPolicy)
                     .status(status)
-                    .modeName(modeId != null ? "mode_" + modeId : null) // TODO: 获取实际模式名称
-                    .policyName(policyId != null ? "policy_" + policyId : null) // TODO: 获取实际策略名称
-                    .policy(null) // TODO: 获取策略详情JSON
+                    .modeName(modeName)
+                    .policyName(policyName)
+                    .policy(policyDetails)
                     .batchName(null)
                     .build();
-            
+
             operationLogMapper.insert(operationLog);
         } catch (Exception e) {
             log.error("记录操作日志失败", e);

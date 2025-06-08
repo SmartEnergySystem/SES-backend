@@ -2,6 +2,8 @@ package com.SES.mapper;
 
 import com.SES.entity.DeviceMode;
 import com.SES.vo.device.DeviceModeVO;
+import com.SES.vo.DeviceModeVO;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Options;
@@ -60,4 +62,11 @@ public interface DeviceModeMapper {
      */
     @Select("SELECT * FROM device_mode WHERE device_id = #{deviceId} AND name = #{modeName}")
     DeviceMode getByDeviceIdAndModeName(Long deviceId, String modeName);
+
+    /**
+     * 根据设备id删除设备模式
+     * @param deviceId
+     */
+    @Delete("DELETE FROM device_mode WHERE device_id = #{deviceId}")
+    void deleteByDeviceId(Long deviceId);
 }

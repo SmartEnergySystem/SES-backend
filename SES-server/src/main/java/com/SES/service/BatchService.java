@@ -32,4 +32,10 @@ public interface BatchService {
      * @param nameEditDTO
      */
     void editBatchName(Long id, BatchNameEditDTO nameEditDTO);
+
+    /**
+     * 应用批量操作
+     * @param id
+     */
+    void applyBatch(Long id);
 }
