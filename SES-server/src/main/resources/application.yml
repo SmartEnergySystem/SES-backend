@@ -36,6 +36,22 @@ spring:
       url: jdbc:mysql://${SES.datasource.host}:${SES.datasource.port}/${SES.datasource.database}?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
       username: ${SES.datasource.username}
       password: ${SES.datasource.password}
+  rabbitmq:
+    host: localhost  # 默认 localhost
+    port: 5672                 # 默认端口
+    username: guest            # 默认用户名
+    password: guest            # 默认密码
+    virtual-host: /             # 虚拟主机，默认 /
+    publisher-confirm-type: correlated  # 开启发布确认（可选）
+    publisher-return: true      # 开启消息退回（可选）
+    listener:
+      simple:
+        acknowledge-mode: manual  # 手动确认模式（推荐）
+        prefetch: 1               # 每次只处理一个消息（防过载）
+        retry:
+          enabled: true           # 启用重试机制
+          max-attempts: 3         # 最多重试3次
+          initial-interval: 2000  # 初始重试间隔
 
 mybatis:
   #mapper配置文件
@@ -56,6 +72,5 @@ logging:
         mapper: debug
         service: info
         controller: info
-
 
 

@@ -1,10 +1,10 @@
-package com.SES.controller.admin;
+package com.SES.controller.user;
 
 import com.SES.dto.device.*;
 import com.SES.result.PageResult;
 import com.SES.result.Result;
 import com.SES.service.DeviceService;
-import com.SES.vo.DeviceModeVO;
+import com.SES.vo.device.DeviceModeVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;

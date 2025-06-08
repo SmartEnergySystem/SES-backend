@@ -1,8 +1,8 @@
 package com.SES.service;
 
-import com.SES.dto.Batch.BatchAddDTO;
-import com.SES.dto.Batch.BatchNameEditDTO;
-import com.SES.dto.Batch.BatchPageQueryDTO;
+import com.SES.dto.batch.BatchAddDTO;
+import com.SES.dto.batch.BatchNameEditDTO;
+import com.SES.dto.batch.BatchPageQueryDTO;
 import com.SES.result.PageResult;
 
 public interface BatchService {

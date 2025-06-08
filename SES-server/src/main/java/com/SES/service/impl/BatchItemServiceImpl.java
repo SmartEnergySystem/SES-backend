@@ -1,8 +1,8 @@
 package com.SES.service.impl;
 
 import com.SES.context.BaseContext;
-import com.SES.dto.BatchItem.BatchItemDTO;
-import com.SES.dto.BatchItem.BatchItemEditDTO;
+import com.SES.dto.batchItem.BatchItemDTO;
+import com.SES.dto.batchItem.BatchItemEditDTO;
 import com.SES.entity.BatchItem;
 import com.SES.exception.BaseException;
 import com.SES.mapper.BatchItemMapper;

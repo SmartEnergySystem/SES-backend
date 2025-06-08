@@ -13,13 +13,15 @@ import com.SES.mapper.UserMapper;
 import com.SES.result.PageResult;
 import com.SES.service.DeviceApiService;
 import com.SES.service.DeviceService;
-import com.SES.vo.DeviceModeVO;
+import com.SES.vo.device.DeviceModeVO;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -41,6 +43,9 @@ public class DeviceServiceImpl implements DeviceService {
 
     @Autowired
     private DeviceApiService deviceApiService;
+
+    @Resource
+    private RabbitTemplate rabbitTemplate;
 
     /**
      * 新增设备
@@ -79,6 +84,9 @@ public class DeviceServiceImpl implements DeviceService {
         device.setDefaultModeName(deviceInitApiResultDTO.getDefaultModeName());
         deviceMapper.update(device);
 
+        // 发送消息通知刷新缓存
+        rabbitTemplate.convertAndSend("deviceExchange", "device.cache.refresh", "refresh");
+
         log.info("用户{}新增设备成功：{}", currentUserId, deviceDTO.getName());
     }
 
@@ -102,6 +110,9 @@ public class DeviceServiceImpl implements DeviceService {
         // TODO: 补充级联删除
         // 因为使用逻辑外键，应该级联删除模式表、策略表、模拟设备表和模拟设备模式表，以及策略表、策略条目表
         // 使用服务层的删除函数，而不是一次性操控多个mapper
+
+        // 发送消息通知刷新缓存
+        rabbitTemplate.convertAndSend("deviceExchange", "device.cache.refresh", "refresh");
 
         log.info("用户{}删除设备：{}", currentUserId, device.getName());
     }

@@ -1,4 +1,4 @@
-package com.SES.dto.BatchItem;
+package com.SES.dto.batchItem;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -7,14 +7,11 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * 新增批量操作条目时传递的数据模型
+ * 修改批量操作条目时传递的数据模型
  */
 @Data
-@ApiModel(description = "新增批量操作条目时传递的数据模型")
-public class BatchItemDTO implements Serializable {
-
-    @ApiModelProperty("批量操作ID")
-    private Long batchId;
+@ApiModel(description = "修改批量操作条目时传递的数据模型")
+public class BatchItemEditDTO implements Serializable {
 
     @ApiModelProperty("设备ID")
     private Long deviceId;

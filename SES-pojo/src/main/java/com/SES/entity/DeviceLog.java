@@ -40,5 +40,5 @@ public class DeviceLog implements Serializable {
 
     private Float power; // 单位：W
 
-    private Integer energyConsumption; // 单位：kWh
+    private Float energyConsumption; // 单位：kWh
 }

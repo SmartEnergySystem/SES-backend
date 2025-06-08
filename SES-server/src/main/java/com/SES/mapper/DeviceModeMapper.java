@@ -1,7 +1,7 @@
 package com.SES.mapper;
 
 import com.SES.entity.DeviceMode;
-import com.SES.vo.DeviceModeVO;
+import com.SES.vo.device.DeviceModeVO;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Options;

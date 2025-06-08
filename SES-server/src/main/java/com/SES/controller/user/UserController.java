@@ -10,7 +10,7 @@ import com.SES.result.PageResult;
 import com.SES.result.Result;
 import com.SES.service.UserService;
 import com.SES.utils.JwtUtil;
-import com.SES.vo.UserLoginVO;
+import com.SES.vo.user.UserLoginVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;

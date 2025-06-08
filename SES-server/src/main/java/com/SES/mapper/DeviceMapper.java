@@ -5,6 +5,8 @@ import com.SES.entity.Device;
 import com.github.pagehelper.Page;
 import org.apache.ibatis.annotations.*;
 
+import java.util.List;
+
 @Mapper
 public interface DeviceMapper {
 
@@ -54,4 +56,11 @@ public interface DeviceMapper {
      * @param device
      */
     void update(Device device);
+
+    /**
+     * 查询所有设备ID
+     * @return 设备ID的集合
+     */
+    @Select("SELECT id FROM device")
+    List<Long> getAllDeviceIds();
 }

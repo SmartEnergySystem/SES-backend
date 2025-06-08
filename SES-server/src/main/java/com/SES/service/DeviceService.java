@@ -2,7 +2,7 @@ package com.SES.service;
 
 import com.SES.dto.device.*;
 import com.SES.result.PageResult;
-import com.SES.vo.DeviceModeVO;
+import com.SES.vo.device.DeviceModeVO;
 
 import java.util.List;
 

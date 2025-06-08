@@ -131,12 +131,25 @@ public class DeviceApiSeviceImpl implements DeviceApiService {
         String modeName = simDevice.getModeName();
         deviceQueryApiResultDTO.setModeName(modeName);
 
-        // 查询对应模拟设备模式
-        SimDeviceMode simDeviceMode = simDeviceModeMapper.getByDeviceIdAndModeName(deviceId,modeName);
+        // 查询对应模拟设备模式，根据模式返回功率
+        SimDeviceMode simDeviceMode = simDeviceModeMapper.getByDeviceIdAndModeName(deviceId, modeName);
         if (simDeviceMode == null) {
             throw new BaseException("找不到模拟设备模式");
         }
-        deviceQueryApiResultDTO.setPower(simDeviceMode.getPower());
+
+        float basePower = simDeviceMode.getPower();
+
+        // 对功率进行浮动，模拟真实输出
+        if (basePower != 0.0f && Math.random() < 0.5) { // 50% 概率
+            float fluctuation = (float) (Math.random() * 2 - 1); // [-1, 1]范围内的浮点数
+            basePower += fluctuation;
+
+            if (basePower < 0.0f) {
+                basePower = 0.0f; // 确保最终功率不小于 0
+            }
+        }
+
+        deviceQueryApiResultDTO.setPower(basePower);
 
         // 若为故障模式，设置设备状态为故障
         if (modeName != null && modeName.startsWith("故障模式")) {

@@ -1,6 +1,6 @@
 package com.SES.mapper;
 
-import com.SES.dto.Batch.BatchPageQueryDTO;
+import com.SES.dto.batch.BatchPageQueryDTO;
 import com.SES.entity.Batch;
 import org.apache.ibatis.annotations.*;
 

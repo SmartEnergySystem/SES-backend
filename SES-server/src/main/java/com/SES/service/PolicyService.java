@@ -39,4 +39,10 @@ public interface PolicyService {
      * @param deviceId
      */
     void deletePoliciesByDeviceId(Long deviceId);
+
+    /**
+     * 根据id获得策略的Json，包括策略条目
+     * @param id
+     */
+    String getJsonString(Long id);
 }

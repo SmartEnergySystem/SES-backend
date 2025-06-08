@@ -1,14 +1,19 @@
 package com.SES.service.impl;
 
 import com.SES.context.BaseContext;
+import com.SES.dto.PolicyJsonDTO;
 import com.SES.dto.policy.PolicyDTO;
 import com.SES.dto.policy.PolicyNameEditDTO;
 import com.SES.entity.Device;
 import com.SES.entity.Policy;
+import com.SES.entity.PolicyItem;
 import com.SES.exception.BaseException;
 import com.SES.mapper.DeviceMapper;
 import com.SES.mapper.PolicyMapper;
+import com.SES.service.PolicyItemService;
 import com.SES.service.PolicyService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -22,6 +27,9 @@ public class PolicyServiceImpl implements PolicyService {
 
     @Autowired
     private PolicyMapper policyMapper;
+
+    @Autowired
+    private PolicyItemService policyItemService;
 
     @Autowired
     private DeviceMapper deviceMapper;
@@ -148,5 +156,39 @@ public class PolicyServiceImpl implements PolicyService {
         // TODO: 补充级联删除
         // 因为使用逻辑外键，应该级联删除策略条目表
         log.info("用户{}删除设备{}的所有策略", currentUserId, deviceId);
+    }
+
+    /**
+     * 根据id获得策略的Json字符串，包括策略条目
+     * @param id 策略ID
+     * @return JSON字符串表示的策略及其条目
+     */
+    @Override
+    public String getJsonString(Long id) {
+        // 1. 验证策略是否存在
+        Policy policy = policyMapper.getById(id);
+        if (policy == null) {
+            throw new BaseException("策略不存在");
+        }
+
+        // 2. 获取策略条目列表
+        List<PolicyItem> policyItems = policyItemService.getPolicyItemsByPolicyId(id);
+
+        // 3. 构建 PolicyJsonDTO 对象
+        PolicyJsonDTO policyJsonDTO = new PolicyJsonDTO();
+        policyJsonDTO.setId(policy.getId());
+        policyJsonDTO.setDeviceId(policy.getDeviceId());
+        policyJsonDTO.setName(policy.getName());
+        policyJsonDTO.setCreatetime(policy.getCreatetime());
+        policyJsonDTO.setUpdatetime(policy.getUpdatetime());
+        policyJsonDTO.setItems(policyItems); // 直接赋值，无需转换
+
+        // 4. 序列化为 JSON 字符串
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            return objectMapper.writeValueAsString(policyJsonDTO);
+        } catch (JsonProcessingException e) {
+            throw new BaseException("JSON序列化失败");
+        }
     }
 }

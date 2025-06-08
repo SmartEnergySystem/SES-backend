@@ -1,4 +1,4 @@
-package com.SES.dto.Batch;
+package com.SES.dto.batch;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;

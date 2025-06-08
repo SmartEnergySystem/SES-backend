@@ -1,15 +1,15 @@
 package com.SES.service.impl;
 
 import com.SES.context.BaseContext;
-import com.SES.dto.Batch.BatchNameEditDTO;
-import com.SES.dto.Batch.BatchPageQueryDTO;
-import com.SES.entity.Device;
+import com.SES.dto.batch.BatchNameEditDTO;
+import com.SES.dto.batch.BatchPageQueryDTO;
 import com.SES.exception.BaseException;
 import com.SES.mapper.BatchMapper; // 这里修正为正确的 BatchMapper 引入
 import com.SES.result.PageResult;
-import com.SES.dto.Batch.BatchAddDTO; // 补充缺失的引入
+import com.SES.dto.batch.BatchAddDTO; // 补充缺失的引入
 import com.SES.entity.Batch; // 补充缺失的引入
 import com.SES.service.BatchService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
+@Slf4j
 public class BatchServiceImpl implements BatchService {
 
     @Autowired

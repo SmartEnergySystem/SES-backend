@@ -1,8 +1,8 @@
-package com.SES.controller.admin;
+package com.SES.controller.user;
 
-import com.SES.dto.Batch.BatchAddDTO;
-import com.SES.dto.Batch.BatchNameEditDTO;
-import com.SES.dto.Batch.BatchPageQueryDTO;
+import com.SES.dto.batch.BatchAddDTO;
+import com.SES.dto.batch.BatchNameEditDTO;
+import com.SES.dto.batch.BatchPageQueryDTO;
 import com.SES.result.PageResult;
 import com.SES.result.Result;
 import com.SES.service.BatchService;
