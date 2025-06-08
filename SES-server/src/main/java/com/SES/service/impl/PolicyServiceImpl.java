@@ -5,8 +5,13 @@ import com.SES.dto.policy.PolicyDTO;
 import com.SES.dto.policy.PolicyNameEditDTO;
 import com.SES.entity.Device;
 import com.SES.entity.Policy;
+import com.SES.entity.PolicyItem;
+import com.SES.vo.PolicyVO;
+
+import java.util.ArrayList;
 import com.SES.exception.BaseException;
 import com.SES.mapper.DeviceMapper;
+import com.SES.mapper.PolicyItemMapper;
 import com.SES.mapper.PolicyMapper;
 import com.SES.service.PolicyService;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +30,9 @@ public class PolicyServiceImpl implements PolicyService {
 
     @Autowired
     private DeviceMapper deviceMapper;
+
+    @Autowired
+    private PolicyItemMapper policyItemMapper;
 
     /**
      * 新增策略
@@ -77,9 +85,12 @@ public class PolicyServiceImpl implements PolicyService {
             throw new BaseException("无权限操作此策略");
         }
 
+        // 级联删除策略条目
+        policyItemMapper.deleteByPolicyId(id);
+
+        // 删除策略本身
         policyMapper.deleteById(id);
-        // TODO: 补充级联删除
-        // 因为使用逻辑外键，应该级联删除策略条目表
+
         log.info("用户{}删除策略：{}", currentUserId, policy.getName());
     }
 
@@ -88,9 +99,8 @@ public class PolicyServiceImpl implements PolicyService {
      * @param deviceId
      * @return
      */
-    //TODO：改成返回VO
     @Override
-    public List<Policy> getPoliciesByDeviceId(Long deviceId) {
+    public List<PolicyVO> getPoliciesByDeviceId(Long deviceId) {
         Long currentUserId = BaseContext.getCurrentId();
 
         // 验证设备是否属于当前用户
@@ -99,7 +109,28 @@ public class PolicyServiceImpl implements PolicyService {
             throw new BaseException("设备不存在或无权限操作");
         }
 
-        return policyMapper.getByDeviceId(deviceId);
+        List<Policy> policies = policyMapper.getByDeviceId(deviceId);
+
+        // 转换为VO并添加策略条目数量
+        List<PolicyVO> policyVOs = new ArrayList<>();
+        for (Policy policy : policies) {
+            // 查询策略条目数量
+            List<PolicyItem> policyItems = policyItemMapper.getByPolicyId(policy.getId());
+            int itemCount = policyItems.size();
+
+            PolicyVO policyVO = PolicyVO.builder()
+                    .id(policy.getId())
+                    .deviceId(policy.getDeviceId())
+                    .name(policy.getName())
+                    .createtime(policy.getCreatetime())
+                    .updatetime(policy.getUpdatetime())
+                    .itemCount(itemCount)
+                    .build();
+
+            policyVOs.add(policyVO);
+        }
+
+        return policyVOs;
     }
 
     /**
@@ -144,9 +175,15 @@ public class PolicyServiceImpl implements PolicyService {
             throw new BaseException("设备不存在或无权限操作");
         }
 
+        // 级联删除：先删除所有策略的条目，再删除策略
+        List<Policy> policies = policyMapper.getByDeviceId(deviceId);
+        for (Policy policy : policies) {
+            policyItemMapper.deleteByPolicyId(policy.getId());
+        }
+
+        // 删除设备的所有策略
         policyMapper.deleteByDeviceId(deviceId);
-        // TODO: 补充级联删除
-        // 因为使用逻辑外键，应该级联删除策略条目表
+
         log.info("用户{}删除设备{}的所有策略", currentUserId, deviceId);
     }
 }

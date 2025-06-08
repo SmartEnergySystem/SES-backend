@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -55,7 +56,9 @@ public class PolicyItemServiceImpl implements PolicyItemService {
             throw new BaseException("无权限操作此策略");
         }
 
-        //TODO：验证：不同条目的时间范围不能重叠
+        // 验证：不同条目的时间范围不能重叠
+        validateTimeRangeOverlap(policyItemDTO.getPolicyId(), null,
+                                policyItemDTO.getStartTime(), policyItemDTO.getEndTime());
 
         PolicyItem policyItem = new PolicyItem();
         policyItem.setPolicyId(policyItemDTO.getPolicyId());
@@ -150,7 +153,13 @@ public class PolicyItemServiceImpl implements PolicyItemService {
             throw new BaseException("无权限操作此策略条目");
         }
 
-        //TODO：验证：不同条目的时间范围不能重叠
+        // 验证：不同条目的时间范围不能重叠
+        LocalDateTime newStartTime = policyItemEditDTO.getStartTime() != null ?
+                                    policyItemEditDTO.getStartTime() : policyItem.getStartTime();
+        LocalDateTime newEndTime = policyItemEditDTO.getEndTime() != null ?
+                                  policyItemEditDTO.getEndTime() : policyItem.getEndTime();
+
+        validateTimeRangeOverlap(policyItem.getPolicyId(), id, newStartTime, newEndTime);
 
         // 更新策略条目信息
         if (policyItemEditDTO.getStartTime() != null) {
@@ -190,5 +199,59 @@ public class PolicyItemServiceImpl implements PolicyItemService {
 
         policyItemMapper.deleteByPolicyId(policyId);
         log.info("用户{}删除策略{}的所有条目", currentUserId, policyId);
+    }
+
+    /**
+     * 验证时间范围是否重叠
+     * @param policyId 策略ID
+     * @param excludeItemId 排除的策略条目ID（修改时使用，新增时为null）
+     * @param startTime 开始时间
+     * @param endTime 结束时间
+     */
+    private void validateTimeRangeOverlap(Long policyId, Long excludeItemId,
+                                         LocalDateTime startTime, LocalDateTime endTime) {
+        if (startTime == null || endTime == null) {
+            return; // 如果时间为空，跳过验证
+        }
+
+        if (startTime.isAfter(endTime) || startTime.isEqual(endTime)) {
+            throw new BaseException("开始时间必须早于结束时间");
+        }
+
+        // 获取该策略的所有条目
+        List<PolicyItem> existingItems = policyItemMapper.getByPolicyId(policyId);
+
+        for (PolicyItem existingItem : existingItems) {
+            // 跳过当前正在修改的条目
+            if (excludeItemId != null && existingItem.getId().equals(excludeItemId)) {
+                continue;
+            }
+
+            // 检查时间范围是否重叠
+            if (isTimeRangeOverlap(startTime, endTime,
+                                  existingItem.getStartTime(), existingItem.getEndTime())) {
+                throw new BaseException("时间范围与现有策略条目重叠，请调整时间设置");
+            }
+        }
+    }
+
+    /**
+     * 判断两个时间范围是否重叠
+     * @param start1 第一个时间范围的开始时间
+     * @param end1 第一个时间范围的结束时间
+     * @param start2 第二个时间范围的开始时间
+     * @param end2 第二个时间范围的结束时间
+     * @return 是否重叠
+     */
+    private boolean isTimeRangeOverlap(LocalDateTime start1, LocalDateTime end1,
+                                      LocalDateTime start2, LocalDateTime end2) {
+        if (start1 == null || end1 == null || start2 == null || end2 == null) {
+            return false; // 如果任何时间为空，认为不重叠
+        }
+
+        // 两个时间范围重叠的条件：
+        // 1. start1 < end2 且 start2 < end1
+        // 这是标准的区间重叠判断算法
+        return start1.isBefore(end2) && start2.isBefore(end1);
     }
 }
