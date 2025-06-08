@@ -1,4 +1,4 @@
-package com.SES.vo;
+package com.SES.vo.policy;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;

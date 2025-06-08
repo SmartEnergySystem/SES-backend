@@ -1,8 +1,8 @@
 package com.SES.service.impl;
 
 import com.SES.context.BaseContext;
-import com.SES.dto.Batch.BatchNameEditDTO;
-import com.SES.dto.Batch.BatchPageQueryDTO;
+import com.SES.dto.batch.BatchNameEditDTO;
+import com.SES.dto.batch.BatchPageQueryDTO;
 import com.SES.dto.device.DeviceControlDTO;
 import com.SES.entity.BatchItem;
 import com.SES.entity.Device;

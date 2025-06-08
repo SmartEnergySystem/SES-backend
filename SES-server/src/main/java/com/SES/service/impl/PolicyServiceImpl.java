@@ -7,8 +7,7 @@ import com.SES.dto.policy.PolicyNameEditDTO;
 import com.SES.entity.Device;
 import com.SES.entity.Policy;
 import com.SES.entity.PolicyItem;
-import com.SES.entity.PolicyItem;
-import com.SES.vo.PolicyVO;
+import com.SES.vo.policy.PolicyVO;
 
 import java.util.ArrayList;
 import com.SES.exception.BaseException;

@@ -2,8 +2,7 @@ package com.SES.controller.user;
 
 import com.SES.dto.policy.PolicyDTO;
 import com.SES.dto.policy.PolicyNameEditDTO;
-import com.SES.entity.Policy;
-import com.SES.vo.PolicyVO;
+import com.SES.vo.policy.PolicyVO;
 import com.SES.result.Result;
 import com.SES.service.PolicyService;
 import io.swagger.annotations.Api;
