@@ -47,6 +47,9 @@ public class DeviceMonitorServiceImpl implements DeviceMonitorService {
     // 定时任务：每隔一定间隔轮询一次所有设备
     @Scheduled(fixedRate = DEVICE_QUERY_INTERVAL)
     public void pollAllDevices() {
+        if(ENABLE_AUTO_DEVICE_MONITOR==0){
+            return;
+        }
         List<Long> deviceIds = deviceIdCacheService.getAllDeviceId();
         for (Long deviceId : deviceIds) {
             pollDeviceAsync(deviceId);

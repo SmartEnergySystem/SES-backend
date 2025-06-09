@@ -1,9 +1,13 @@
 package com.SES.service.impl;
 
+import com.SES.config.RabbitMQConfig;
 import com.SES.constant.DeviceStatusConstant;
 import com.SES.context.BaseContext;
 import com.SES.dto.device.*;
 import com.SES.dto.deviceApi.DeviceInitApiResultDTO;
+import com.SES.dto.logCommonCache.RefreshLogCommonCacheDeviceMessageDTO;
+import com.SES.dto.logCommonCache.RefreshLogCommonCachePolicyMessageDTO;
+import com.SES.dto.logCommonCache.RefreshLogCommonCacheMessageDTO;
 import com.SES.entity.*;
 import com.SES.exception.BaseException;
 import com.SES.mapper.*;
@@ -94,10 +98,23 @@ public class DeviceServiceImpl implements DeviceService {
         device.setDefaultModeName(deviceInitApiResultDTO.getDefaultModeName());
         deviceMapper.update(device);
 
-        // 发送消息通知刷新缓存
+        // 通知刷新DeviceId缓存
         rabbitTemplate.convertAndSend("deviceExchange", "device.cache.refresh", "refresh");
 
-        log.info("用户{}新增设备成功：{}", currentUserId, deviceDTO.getName());
+
+        // 通知新建LogCommon缓存
+        try {
+            RefreshLogCommonCacheMessageDTO dto = new RefreshLogCommonCacheMessageDTO();
+            dto.setDeviceId(deviceId);
+
+            rabbitTemplate.convertAndSend(RabbitMQConfig.QUEUE_LOG_COMMON_REFRESH, dto);
+            log.info("已发送设备缓存刷新消息: {}", dto);
+        } catch (Exception e) {
+            log.error("发送设备缓存刷新消息失败", e);
+
+
+            log.info("用户{}新增设备成功：{}", currentUserId, deviceDTO.getName());
+        }
     }
 
     /**
@@ -196,10 +213,27 @@ public class DeviceServiceImpl implements DeviceService {
             throw new BaseException("设备不存在或无权限操作");
         }
 
-        device.setName(deviceNameEditDTO.getName());
+        // 获取旧名称用于日志记录
+        String oldName = device.getName();
+        String newName = deviceNameEditDTO.getName();
+
+        // 更新设备名称
+        device.setName(newName);
         deviceMapper.update(device);
-        
-        log.info("用户{}修改设备{}名称为：{}", currentUserId, id, deviceNameEditDTO.getName());
+
+        // 构造并发送消息
+        RefreshLogCommonCacheDeviceMessageDTO dto = new RefreshLogCommonCacheDeviceMessageDTO();
+        dto.setDeviceId(id);
+        dto.setDeviceName(newName);
+
+        try {
+            rabbitTemplate.convertAndSend(RabbitMQConfig.QUEUE_LOG_COMMON_REFRESH_DEVICE, dto);
+            log.info("已发送设备名称变更消息: deviceId={}, deviceName={}", dto.getDeviceId(), dto.getDeviceName());
+        } catch (Exception e) {
+            log.error("发送设备名称变更消息失败", e);
+        }
+
+        log.info("用户{}修改设备{}名称为：{}", currentUserId, id, newName);
     }
 
     /**
@@ -235,12 +269,23 @@ public class DeviceServiceImpl implements DeviceService {
             }
             device.setPolicyId(policyId);
         }
-
         deviceMapper.update(device);
         
         // 记录操作日志
         recordOperationLog(currentUserId, device, devicePolicyEditDTO.getIsApplyPolicy(), 
                           null, null, devicePolicyEditDTO.getPolicyId());
+
+        // 构造并发送消息
+        try {
+            RefreshLogCommonCachePolicyMessageDTO dto = new RefreshLogCommonCachePolicyMessageDTO();
+            dto.setDeviceId(id);
+            dto.setPolicyId(device.getPolicyId()); // 可能为 null，表示解绑策略
+
+            rabbitTemplate.convertAndSend(RabbitMQConfig.QUEUE_LOG_COMMON_REFRESH_POLICY, dto);
+            log.info("已发送设备策略变更消息: {}", dto);
+        } catch (Exception e) {
+            log.error("发送设备策略变更消息失败", e);
+        }
         
         log.info("用户{}修改设备{}策略", currentUserId, id);
     }
@@ -323,6 +368,8 @@ public class DeviceServiceImpl implements DeviceService {
             throw new BaseException("设备不存在或无权限操作");
         }
 
+        Long oldPolicyId = device.getPolicyId(); // 保存旧策略ID用于判断是否有变化
+
         // 处理策略
         if (deviceControlDTO.getIsApplyPolicy() != null) {
             if (deviceControlDTO.getIsApplyPolicy() == 0) {
@@ -343,6 +390,9 @@ public class DeviceServiceImpl implements DeviceService {
                 }
                 device.setPolicyId(policyId);
             }
+            deviceMapper.update(device);
+
+
         }
 
 
@@ -371,8 +421,26 @@ public class DeviceServiceImpl implements DeviceService {
         recordOperationLog(currentUserId, device, deviceControlDTO.getIsApplyPolicy(),
                           deviceControlDTO.getStatus(), deviceControlDTO.getModeId(),
                           deviceControlDTO.getPolicyId());
+
+        // 如果策略变更，发送消息
+        if ((deviceControlDTO.getIsApplyPolicy() != null&& !oldPolicyId.equals(device.getPolicyId()))) {
+
+            try {
+                RefreshLogCommonCachePolicyMessageDTO dto = new RefreshLogCommonCachePolicyMessageDTO();
+                dto.setDeviceId(id);
+                dto.setPolicyId(device.getPolicyId()); // 可能为 null，表示解绑策略
+
+                rabbitTemplate.convertAndSend(
+                        RabbitMQConfig.QUEUE_LOG_COMMON_REFRESH_POLICY,
+                        dto
+                );
+                log.info("已发送设备策略变更消息: {}", dto);
+            } catch (Exception e) {
+                log.error("发送设备策略变更消息失败", e);
+            }
+        }
         
-        log.info("用户{}综合控制设备{}", currentUserId, id);
+        log.info("用户{}综合控制设备{}完成", currentUserId, id);
     }
 
 
@@ -380,6 +448,7 @@ public class DeviceServiceImpl implements DeviceService {
     /**
      * 记录操作日志
      */
+    // TODO：以后改为操作log类
     private void recordOperationLog(Long userId, Device device, Integer isApplyPolicy,
                                    Integer status, Long modeId, Long policyId) {
         try {

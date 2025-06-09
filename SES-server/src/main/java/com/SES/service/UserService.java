@@ -1,9 +1,6 @@
 package com.SES.service;
 
-import com.SES.dto.user.PasswordEditDTO;
-import com.SES.dto.user.UserLoginDTO;
-import com.SES.dto.user.UserDTO;
-import com.SES.dto.user.UserPageQueryDTO;
+import com.SES.dto.user.*;
 import com.SES.entity.User;
 import com.SES.result.PageResult;
 
@@ -55,4 +52,10 @@ public interface UserService {
      * @param status
      */
     void startOrStop(Long id, Integer status);
+
+    /**
+     * 修改用户名
+     * @param usernameEditDTO
+     */
+    void editUsername(UsernameEditDTO usernameEditDTO);
 }

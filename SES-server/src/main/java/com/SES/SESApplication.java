@@ -1,6 +1,7 @@
 package com.SES;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -12,6 +13,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @Slf4j
 @EnableScheduling //开启异步支持
 @EnableAsync
+@EnableRabbit //开启消息队列
 public class SESApplication {
     public static void main(String[] args) {
         SpringApplication.run(SESApplication.class, args);

@@ -4,6 +4,8 @@ package com.SES.constant;
  * 设备监测类使用的常量
  */
 public class DeviceMonitorConstant {
+    // TODO:不调试的时候记得开回来
+    public static final Integer ENABLE_AUTO_DEVICE_MONITOR = 0; // 是否开启设备自动监测,0=false,1=true
 
     public static final long DEVICE_QUERY_INTERVAL = 5 * 1000; // 设备轮询间隔：5秒（单位毫秒）
 

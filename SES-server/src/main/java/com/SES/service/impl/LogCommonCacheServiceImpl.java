@@ -1,7 +1,12 @@
 package com.SES.service.impl;
 
+import com.SES.config.RabbitMQConfig;
 import com.SES.constant.CacheConstant;
 import com.SES.dto.log.LogCommonDTO;
+import com.SES.dto.logCommonCache.RefreshLogCommonCacheDeviceMessageDTO;
+import com.SES.dto.logCommonCache.RefreshLogCommonCacheUserMessageDTO;
+import com.SES.dto.logCommonCache.RefreshLogCommonCachePolicyMessageDTO;
+import com.SES.dto.logCommonCache.RefreshLogCommonCacheMessageDTO;
 import com.SES.entity.Device;
 import com.SES.entity.Policy;
 import com.SES.entity.User;
@@ -13,15 +18,23 @@ import com.SES.service.LogCommonCacheService;
 import com.SES.service.PolicyService;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.Cache;
-import org.springframework.cache.caffeine.CaffeineCache;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import org.springframework.amqp.core.Message;
+import com.rabbitmq.client.Channel;                // RabbitMQ 通道对象
+
+
+import static com.SES.constant.CacheConstant.DEVICE_CACHE_MAX_SIZE;
+import static com.SES.constant.CacheConstant.ENABLE_AUTO_CACHE_REFRESH;
 
 @Service
 @Slf4j
@@ -45,6 +58,8 @@ public class LogCommonCacheServiceImpl implements LogCommonCacheService {
     @Autowired
     private DeviceIdCacheService deviceIdCacheService;
 
+    @Autowired
+    private MessageConverter messageConverter;
 
     /**
      * 初始化缓存
@@ -52,7 +67,7 @@ public class LogCommonCacheServiceImpl implements LogCommonCacheService {
     @PostConstruct
     public void init() {
         cache = Caffeine.newBuilder()
-                .maximumSize(1000) // 根据实际情况调整最大缓存数
+                .maximumSize(DEVICE_CACHE_MAX_SIZE) // 根据实际情况调整最大缓存数
                 .expireAfterWrite(5, TimeUnit.MINUTES)
                 .build();
 
@@ -64,6 +79,9 @@ public class LogCommonCacheServiceImpl implements LogCommonCacheService {
      */
     @Scheduled(fixedRate = CacheConstant.LOG_COMMON_REFRESH_INTERVAL)
     public void scheduledRefreshLogCommonCache() {
+        if(ENABLE_AUTO_CACHE_REFRESH==0){
+            return;
+        }
         log.info("正在执行定时刷新 LogCommonCache...");
         refreshAllDeviceCaches();
     }
@@ -86,7 +104,7 @@ public class LogCommonCacheServiceImpl implements LogCommonCacheService {
     }
 
     /**
-     * 刷新整个缓存项
+     * 刷新deviceId的整个缓存项
      */
     public void refreshLogCommonCache(Long deviceId) {
         if (deviceId == null) return;
@@ -136,23 +154,113 @@ public class LogCommonCacheServiceImpl implements LogCommonCacheService {
     }
 
     /**
-     * 刷新用户名部分
-     * 消息体应包含：deviceId, username
+     * 监听来自“刷新 LogCommon 缓存”的消息
      */
-    public void refreshLogCommonCacheUser(Long deviceId, String username) {
-        if (deviceId == null) return;
+    @RabbitListener(queues = RabbitMQConfig.QUEUE_LOG_COMMON_REFRESH)
+    public void onRefreshLogCommonCache(RefreshLogCommonCacheMessageDTO dto,
+                                        Message message, Channel channel) throws Exception {
+        try {
+            log.info("收到刷新 LogCommon 缓存请求: {}", dto);
 
-        cache.asMap().computeIfPresent(deviceId, (key, oldDto) -> {
-            return new LogCommonDTO(
-                    oldDto.getUserId(),
-                    username,
-                    oldDto.getDeviceName(),
-                    oldDto.getPolicyName(),
-                    oldDto.getPolicyJson()
-            );
+            if (dto.getDeviceId() == null) {
+                log.warn("消息格式错误，缺少 deviceId");
+                channel.basicReject(message.getMessageProperties().getDeliveryTag(), false);
+                return;
+            }
+
+            // 调用刷新方法
+            refreshLogCommonCache(dto.getDeviceId());
+
+            // 手动确认
+            channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+
+        } catch (Exception e) {
+            log.error("处理刷新 LogCommon 缓存消息失败", e);
+            channel.basicReject(message.getMessageProperties().getDeliveryTag(), false);
+        }
+    }
+
+
+    /**
+     * 监听来自“修改用户名”的消息
+     */
+    @RabbitListener(queues = RabbitMQConfig.QUEUE_LOG_COMMON_REFRESH_USER)
+    public void onRefreshLogCommonCacheByUserId(RefreshLogCommonCacheUserMessageDTO dto,
+                                                Message message, Channel channel) throws Exception {
+        try {
+            log.info("收到刷新LogCommon用户名缓存请求: {}", dto);
+
+            if (dto.getUserId() == null || dto.getUsername() == null) {
+                log.warn("消息格式错误，缺少 userId 或 username");
+                channel.basicReject(message.getMessageProperties().getDeliveryTag(), false);
+                return;
+            }
+
+            refreshLogCommonCacheUser(dto.getUserId(), dto.getUsername());
+
+            // 手动确认
+            channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+
+        } catch (Exception e) {
+            log.error("处理刷新用户名缓存消息失败", e);
+            channel.basicReject(message.getMessageProperties().getDeliveryTag(), false);
+        }
+    }
+
+    /**
+     * 刷新用户名部分
+     * 消息体应包含：userId, username
+     * 直接修改缓存中该用户所有设备的 username（基于缓存查找）
+     */
+    public void refreshLogCommonCacheUser(Long userId, String newUsername) {
+        log.info("开始刷新LogCommon用户 {} 的所有设备 username...", userId);
+        if (userId == null || newUsername == null) {
+            return;
+        }
+
+        cache.asMap().forEach((deviceId, oldDto) -> {
+            if (oldDto != null && userId.equals(oldDto.getUserId())) {
+                LogCommonDTO updatedDto = new LogCommonDTO(
+                        oldDto.getUserId(),
+                        newUsername,
+                        oldDto.getDeviceName(),
+                        oldDto.getPolicyName(),
+                        oldDto.getPolicyJson()
+                );
+                cache.put(deviceId, updatedDto);
+                log.debug("已刷新LogCommon设备 {} 的 username 为 {}", deviceId, newUsername);
+            }
         });
 
-        log.debug("已刷新设备 {} 的 username: {}", deviceId, username);
+        log.info("已完成LogCommon用户 {} 的所有设备 username 刷新", userId);
+    }
+
+
+    /**
+     * 监听来自“修改设备名称”的消息
+     */
+    @RabbitListener(queues = RabbitMQConfig.QUEUE_LOG_COMMON_REFRESH_DEVICE)
+    public void onRefreshLogCommonCacheByDevice(RefreshLogCommonCacheDeviceMessageDTO dto,
+                                                Message message, Channel channel) throws Exception {
+        try {
+            log.info("收到刷新LogCommon设备名称缓存请求: {}", dto);
+
+            if (dto.getDeviceId() == null || dto.getDeviceName() == null) {
+                log.warn("消息格式错误，缺少 deviceId 或 deviceName");
+                channel.basicReject(message.getMessageProperties().getDeliveryTag(), false);
+                return;
+            }
+
+            // 调用刷新方法
+            refreshLogCommonCacheDevice(dto.getDeviceId(), dto.getDeviceName());
+
+            // 手动确认
+            channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+
+        } catch (Exception e) {
+            log.error("处理刷新设备名称缓存消息失败", e);
+            channel.basicReject(message.getMessageProperties().getDeliveryTag(), false);
+        }
     }
 
     /**
@@ -160,6 +268,7 @@ public class LogCommonCacheServiceImpl implements LogCommonCacheService {
      * 消息体应包含：deviceId, deviceName
      */
     public void refreshLogCommonCacheDevice(Long deviceId, String deviceName) {
+        log.info("开始刷新LogCommon设备 {} 的名称...", deviceId);
         if (deviceId == null) return;
 
         cache.asMap().computeIfPresent(deviceId, (key, oldDto) -> {
@@ -172,17 +281,47 @@ public class LogCommonCacheServiceImpl implements LogCommonCacheService {
             );
         });
 
-        log.debug("已刷新设备 {} 的 deviceName: {}", deviceId, deviceName);
+        log.info("已刷新LogCommon设备 {} 的 deviceName: {}", deviceId, deviceName);
+    }
+
+
+    /**
+     * 监听来自“策略变更”的消息
+     */
+    @RabbitListener(queues = RabbitMQConfig.QUEUE_LOG_COMMON_REFRESH_POLICY)
+    public void onRefreshLogCommonCacheByPolicy(RefreshLogCommonCachePolicyMessageDTO dto,
+                                                Message message, Channel channel) throws Exception {
+        try {
+            log.info("收到刷新LogCommon策略缓存请求: {}", dto);
+
+            if (dto.getDeviceId() == null) {
+                log.warn("消息格式错误，缺少 deviceId");
+                channel.basicReject(message.getMessageProperties().getDeliveryTag(), false);
+                return;
+            }
+
+            // 调用刷新方法
+            refreshLogCommonCachePolicy(dto.getDeviceId(), dto.getPolicyId());
+
+            // 手动确认
+            channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+
+        } catch (Exception e) {
+            log.error("处理刷新策略缓存消息失败", e);
+            channel.basicReject(message.getMessageProperties().getDeliveryTag(), false);
+        }
     }
 
     /**
      * 刷新策略部分：policyName，policyJson
      * 消息体应包含：deviceId, policyId
+     * 需要重新查策略表
      */
     public void refreshLogCommonCachePolicy(Long deviceId, Long policyId) {
-        if (deviceId == null || policyId == null) return;
+        if (deviceId == null) return;
 
         Policy policy = policyMapper.getById(policyId);
+
         String policyName = policy != null ? policy.getName() : null;
         String policyJson = policy != null ? policyService.getJsonString(policyId) : null; // 获取 JSON
 
@@ -196,7 +335,7 @@ public class LogCommonCacheServiceImpl implements LogCommonCacheService {
             );
         });
 
-        log.debug("已刷新设备 {} 的 policy: {}", deviceId, policyName);
+        log.info("已刷新LogCommon设备 {} 的 policy: {}", deviceId, policyName);
     }
 
     /**

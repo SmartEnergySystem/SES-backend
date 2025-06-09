@@ -117,11 +117,12 @@ public class PolicyItemServiceImpl implements PolicyItemService {
             throw new BaseException("策略不存在");
         }
 
-        // 验证设备是否属于当前用户
-        Device device = deviceMapper.getByIdAndUserId(policy.getDeviceId(), currentUserId);
-        if (device == null) {
-            throw new BaseException("无权限操作此策略");
-        }
+        // TODO:有的内部服务类会调用这些服务（例如get方法），导致无权限。应该把用户相关验证变成单独函数，在controller提前调用
+//        // 验证设备是否属于当前用户
+//        Device device = deviceMapper.getByIdAndUserId(policy.getDeviceId(), currentUserId);
+//        if (device == null) {
+//            throw new BaseException("无权限操作此策略");
+//        }
 
         return policyItemMapper.getByPolicyId(policyId);
     }

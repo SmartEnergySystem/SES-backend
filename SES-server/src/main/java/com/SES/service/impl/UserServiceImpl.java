@@ -1,13 +1,12 @@
 package com.SES.service.impl;
 
+import com.SES.config.RabbitMQConfig;
 import com.SES.constant.MessageConstant;
 import com.SES.constant.StatusConstant;
 import com.SES.constant.UserTypeConstant;
 import com.SES.context.BaseContext;
-import com.SES.dto.user.PasswordEditDTO;
-import com.SES.dto.user.UserLoginDTO;
-import com.SES.dto.user.UserDTO;
-import com.SES.dto.user.UserPageQueryDTO;
+import com.SES.dto.logCommonCache.RefreshLogCommonCacheUserMessageDTO;
+import com.SES.dto.user.*;
 import com.SES.entity.User;
 import com.SES.exception.*;
 import com.SES.mapper.UserMapper;
@@ -16,12 +15,17 @@ import com.SES.service.UserService;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
+import javax.annotation.Resource;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 
 @Service
 @Slf4j
@@ -29,6 +33,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private UserMapper userMapper;
+
+    @Resource
+    private RabbitTemplate rabbitTemplate;
 
     /**
      * 用户登录
@@ -90,6 +97,48 @@ public class UserServiceImpl implements UserService {
         user.setPassword(DigestUtils.md5DigestAsHex(user.getPassword().getBytes()));
 
         userMapper.insert(user);
+    }
+
+    @Override
+    public void editUsername(UsernameEditDTO usernameEditDTO) {
+        Long currentUserId = BaseContext.getCurrentId();
+
+        // 根据id查询对应数据
+        User user = userMapper.getById(currentUserId);
+
+        if (user == null) {
+            // 账号不存在
+            throw new AccountNotFoundException("账号" + MessageConstant.NOT_EXISTS);
+        }
+
+        String newUsername = usernameEditDTO.getNewUsername();
+        String oldUsername = user.getUsername();
+
+        // 如果新旧用户名一致，无需修改
+        if (newUsername.equals(oldUsername)) {
+            return;
+        }
+
+        // 更新用户名
+        user.setUsername(newUsername);
+        userMapper.update(user);
+
+        // 构建要发送的消息体
+        Map<String, Object> messageBody = new HashMap<>();
+        messageBody.put("userId", currentUserId);
+        messageBody.put("username", newUsername);
+
+        // 发送消息到 RabbitMQ 队列
+        RefreshLogCommonCacheUserMessageDTO dto = new RefreshLogCommonCacheUserMessageDTO();
+        dto.setUserId(currentUserId);
+        dto.setUsername(newUsername);
+
+        try {
+            rabbitTemplate.convertAndSend(RabbitMQConfig.QUEUE_LOG_COMMON_REFRESH_USER, dto);
+            log.info("已发送用户名变更消息: {}", dto);
+        } catch (Exception e) {
+            log.error("发送用户名变更消息失败", e);
+        }
     }
 
     /**
@@ -203,6 +252,8 @@ public class UserServiceImpl implements UserService {
 
         userMapper.update(user);
     }
+
+
 
     /**
      * 判断当前操作用户是否为管理员

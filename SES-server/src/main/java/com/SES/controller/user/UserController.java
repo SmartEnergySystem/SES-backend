@@ -84,6 +84,20 @@ public class UserController {
     }
 
     /**
+     * 修改用户名
+     * @param usernameEditDTO
+     * @return
+     */
+    @PutMapping("/editUsername")
+    @ApiOperation(value="修改用户名")
+    public Result<String> editUsername(@RequestBody UsernameEditDTO usernameEditDTO) {
+
+        userService.editUsername(usernameEditDTO);
+        return Result.success();
+    }
+
+
+    /**
      * 修改密码
      * @param passwordEditDTO
      * @return
