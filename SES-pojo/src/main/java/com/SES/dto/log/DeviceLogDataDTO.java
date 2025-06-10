@@ -13,4 +13,5 @@ public class DeviceLogDataDTO {
     private String modeName;
     private String policyName;
     private Float power;
+    private Float energyConsumption;
 }

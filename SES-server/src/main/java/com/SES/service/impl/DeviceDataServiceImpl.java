@@ -1,13 +1,17 @@
 package com.SES.service.impl;
 
 import com.SES.dto.deviceData.DeviceDataQueryDTO;
+import com.SES.dto.deviceData.DeviceReportQueryDTO;
+import com.SES.dto.deviceData.DeviceReportResultDTO;
 import com.SES.dto.deviceMonitor.DeviceDataRedisDTO;
 import com.SES.dto.log.DeviceLogDataDTO;
 import com.SES.dto.log.LogCommonDTO;
+import com.SES.mapper.DeviceLogMapper;
 import com.SES.service.DeviceDataService;
 import com.SES.service.LogCommonCacheService;
 import com.SES.service.LogService;
 import com.SES.vo.deviceData.DeviceDataVO;
+import com.SES.vo.deviceData.DeviceReportVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -33,6 +37,8 @@ public class DeviceDataServiceImpl implements DeviceDataService {
 
     @Autowired
     private LogCommonCacheService logCommonCacheService;
+    @Autowired
+    private DeviceLogMapper deviceLogMapper;
 
     /**
      * 获取设备当前状态
@@ -100,6 +106,40 @@ public class DeviceDataServiceImpl implements DeviceDataService {
             // 加入结果
             result.add(deviceDataVO);
         }
+        return result;
+    }
+
+    @Override
+    public DeviceReportResultDTO getDeviceReportByDeviceId(Long id, DeviceReportQueryDTO deviceReportQueryDTO) {
+        LocalDateTime startTime = deviceReportQueryDTO.getStartTime();
+        LocalDateTime endTime = deviceReportQueryDTO.getEndTime();
+
+        List<DeviceLogDataDTO> logList = deviceLogMapper.getLogsByDeviceIdAndTimeRange(id, startTime, endTime);
+
+        List<DeviceReportVO> reportVOList = new ArrayList<>();
+        long total = 0;
+        float totalEnergy = 0.0F;
+
+        for (DeviceLogDataDTO log : logList) {
+            DeviceReportVO vo = new DeviceReportVO();
+            vo.setTimestamp(log.getEndTime()); // 用 endTime 作为时间戳
+            vo.setStatus(log.getStatus());
+            vo.setModeName(log.getModeName());
+            vo.setPolicyName(log.getPolicyName());
+            vo.setPower(log.getPower());
+            vo.setEnergyConsumption(log.getEnergyConsumption());
+
+            reportVOList.add(vo);
+            totalEnergy += log.getEnergyConsumption() != null ? log.getEnergyConsumption() : 0.0F;
+            total++;
+        }
+
+        DeviceReportResultDTO result = new DeviceReportResultDTO();
+        result.setTotal(total);
+        result.setTotalEnergyConsumption(totalEnergy);
+        result.setDeviceReports(reportVOList);
+
+
         return result;
     }
 

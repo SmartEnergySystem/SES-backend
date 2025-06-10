@@ -11,16 +11,42 @@
         <result property="modeName" column="mode_name"/>
         <result property="policyName" column="policy_name"/>
         <result property="power" column="power"/>
+        <result property="energyConsumption" column="energy_consumption"/> <!-- 新增这一行 -->
     </resultMap>
 
     <!-- 查询最新一条日志的部分字段 -->
     <select id="getLatestDataByDeviceId" resultMap="DeviceLogDataResultMap">
         SELECT
-            start_time, end_time, status, mode_name, policy_name, power
+        start_time,
+        end_time,
+        status,
+        mode_name,
+        policy_name,
+        power,
+        energy_consumption
         FROM device_log
         WHERE device_id = #{deviceId}
         ORDER BY end_time DESC
         LIMIT 1
     </select>
+
+    <!-- 查询指定时间段内的日志 -->
+    <select id="getLogsByDeviceIdAndTimeRange" resultMap="DeviceLogDataResultMap">
+    <![CDATA[
+        SELECT
+            start_time,
+            end_time,
+            status,
+            mode_name,
+            policy_name,
+            power,
+            energy_consumption
+        FROM device_log
+        WHERE device_id = #{deviceId}
+          AND end_time >= #{startTime}
+          AND end_time <= #{endTime}
+        ORDER BY end_time DESC
+        ]]>
+</select>
 
 </mapper>

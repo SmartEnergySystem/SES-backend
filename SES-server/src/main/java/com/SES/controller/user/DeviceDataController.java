@@ -1,6 +1,8 @@
 package com.SES.controller.user;
 
 import com.SES.dto.deviceData.DeviceDataQueryDTO;
+import com.SES.dto.deviceData.DeviceReportQueryDTO;
+import com.SES.dto.deviceData.DeviceReportResultDTO;
 import com.SES.dto.policy.PolicyDTO;
 import com.SES.result.Result;
 import com.SES.service.DeviceDataService;
@@ -32,6 +34,18 @@ public class DeviceDataController {
     @ApiOperation(value = "获取设备当前状态")
     public Result<List<DeviceDataVO>> getDataByDeviceIdList(DeviceDataQueryDTO deviceDataQueryDTO) {
         List<DeviceDataVO> result = deviceDataService.getDataByDeviceIdList(deviceDataQueryDTO);
+        return Result.success(result);
+    }
+
+    /**
+     * 根据设备id查询设备报表
+     * @param id
+     * @return
+     */
+    @PostMapping("{id}/deviceReport")
+    @ApiOperation(value = "根据设备id查询设备报表")
+    public Result<DeviceReportResultDTO> getDeviceReportByDeviceId(@PathVariable Long id,@RequestBody DeviceReportQueryDTO deviceReportQueryDTO) {
+        DeviceReportResultDTO result = deviceDataService.getDeviceReportByDeviceId(id,deviceReportQueryDTO);
         return Result.success(result);
     }
 }
