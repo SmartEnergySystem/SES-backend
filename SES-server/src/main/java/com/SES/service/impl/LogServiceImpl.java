@@ -1,10 +1,10 @@
 package com.SES.service.impl;
 
 import com.SES.dto.log.DeviceLogDTO;
+import com.SES.dto.log.DeviceLogDataDTO;
 import com.SES.dto.log.LogCommonDTO;
 import com.SES.dto.log.SaveDeviceLogDTO;
 import com.SES.mapper.DeviceLogMapper;
-import com.SES.service.DeviceIdCacheService;
 import com.SES.service.LogCommonCacheService;
 import com.SES.service.LogService;
 import lombok.extern.slf4j.Slf4j;
@@ -36,12 +36,9 @@ public class LogServiceImpl implements LogService {
             return;
         }
 
-        // 从缓存中获取设备公共信息
-        LogCommonDTO commonDTO = logCommonCacheService.getLogCommonDTO(deviceId);
-        if (commonDTO == null) {
-            log.warn("未找到设备 {} 的公共信息，无法保存日志", deviceId);
-            return;
-        }
+        // 从缓存中获取设备公共信息，要求重试和返回兜底数据
+        LogCommonDTO commonDTO = logCommonCacheService.getWithSyncRefreshAndFallback(deviceId);
+
 
         LocalDateTime startTime = saveDeviceLogDTO.getStartTime();
         LocalDateTime endTime = saveDeviceLogDTO.getEndTime();
@@ -56,10 +53,10 @@ public class LogServiceImpl implements LogService {
             return;
         }
 
-        // 计算用电量（kWh）
-        double durationHours = Duration.between(startTime, endTime).toMinutes() / 60.0; // 转换为小时
-        double powerKw = saveDeviceLogDTO.getPower() / 1000.0; // W -> kW
-        int energyConsumption = (int) Math.round(powerKw * durationHours * 1000); // kWh -> 整数，单位：Wh（保留整数即可）
+        // 计算用电量（Wh）
+        long durationMillis = Duration.between(startTime, endTime).toMillis();
+        float powerW = saveDeviceLogDTO.getPower(); // 单位：W
+        float energyConsumption = (float) ((powerW * durationMillis) / 3_600_000.0);
 
         // 构建完整日志数据
         DeviceLogDTO deviceLogDTO = new DeviceLogDTO();
@@ -67,12 +64,16 @@ public class LogServiceImpl implements LogService {
         deviceLogDTO.setUsername(commonDTO.getUsername());
         deviceLogDTO.setDeviceId(deviceId);
         deviceLogDTO.setDeviceName(commonDTO.getDeviceName());
+
         deviceLogDTO.setStartTime(startTime);
         deviceLogDTO.setEndTime(endTime);
+
         deviceLogDTO.setStatus(saveDeviceLogDTO.getStatus());
         deviceLogDTO.setModeName(saveDeviceLogDTO.getModeName());
+
         deviceLogDTO.setPolicyName(commonDTO.getPolicyName());
         deviceLogDTO.setPolicy(commonDTO.getPolicyJson());
+
         deviceLogDTO.setPower(saveDeviceLogDTO.getPower());
         deviceLogDTO.setEnergyConsumption(energyConsumption);
 
@@ -83,5 +84,14 @@ public class LogServiceImpl implements LogService {
         } catch (Exception e) {
             log.error("保存设备 {} 的日志失败", deviceId, e);
         }
+    }
+
+    /**
+     * 获得最新一条日志的设备数据部分
+     * @param deviceId
+     * @return
+     */
+    public DeviceLogDataDTO getLatestDataByDeviceId(Long deviceId){
+        return deviceLogMapper.getLatestDataByDeviceId(deviceId);
     }
 }

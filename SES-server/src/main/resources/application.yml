@@ -52,6 +52,7 @@ spring:
           max-attempts: 3         # 最多重试3次
           initial-interval: 2000  # 初始重试间隔
 
+
 mybatis:
   #mapper配置文件
   mapper-locations: classpath:mapper/*.xml
@@ -68,8 +69,7 @@ logging:
           autoconfigure=DEBUG:
     com:
       SES:
-        mapper: debug
+        mapper: warn
         service: info
         controller: info
-
 

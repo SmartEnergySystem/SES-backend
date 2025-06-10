@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @Slf4j
@@ -423,8 +424,8 @@ public class DeviceServiceImpl implements DeviceService {
                           deviceControlDTO.getPolicyId());
 
         // 如果策略变更，发送消息
-        if ((deviceControlDTO.getIsApplyPolicy() != null&& !oldPolicyId.equals(device.getPolicyId()))) {
-
+        if (deviceControlDTO.getIsApplyPolicy() != null
+                && !Objects.equals(oldPolicyId, device.getPolicyId())) {
             try {
                 RefreshLogCommonCachePolicyMessageDTO dto = new RefreshLogCommonCachePolicyMessageDTO();
                 dto.setDeviceId(id);

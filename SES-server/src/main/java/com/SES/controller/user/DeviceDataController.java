@@ -30,7 +30,7 @@ public class DeviceDataController {
      */
     @GetMapping("/data")
     @ApiOperation(value = "获取设备当前状态")
-    public Result<List<DeviceDataVO>> getDataByDeviceIdList(@RequestBody DeviceDataQueryDTO deviceDataQueryDTO) {
+    public Result<List<DeviceDataVO>> getDataByDeviceIdList(DeviceDataQueryDTO deviceDataQueryDTO) {
         List<DeviceDataVO> result = deviceDataService.getDataByDeviceIdList(deviceDataQueryDTO);
         return Result.success(result);
     }

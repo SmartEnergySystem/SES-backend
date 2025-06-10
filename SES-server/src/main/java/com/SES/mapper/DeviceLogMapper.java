@@ -1,6 +1,7 @@
 package com.SES.mapper;
 
 import com.SES.dto.log.DeviceLogDTO;
+import com.SES.dto.log.DeviceLogDataDTO;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Options;
@@ -18,4 +19,11 @@ public interface DeviceLogMapper {
             "(#{userId}, #{username}, #{deviceId}, #{deviceName}, #{startTime}, #{endTime}, #{status}, #{modeName}, #{policyName}, #{policy}, #{power}, #{energyConsumption})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insert(DeviceLogDTO dto);
+
+    /**
+     * 获得最新一条日志的设备数据部分
+     * @param deviceId
+     * @return
+     */
+    DeviceLogDataDTO getLatestDataByDeviceId(Long deviceId);
 }

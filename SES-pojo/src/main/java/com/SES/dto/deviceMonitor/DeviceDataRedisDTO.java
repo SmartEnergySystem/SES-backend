@@ -20,9 +20,12 @@ public class DeviceDataRedisDTO {
     private LocalDateTime lastUpdatedTime; // 最后更新时间
 
     public boolean isStateChanged(DeviceDataRedisDTO other) {
-        if (other == null) return true;
-        return !status.equals(other.status) ||
-                !modeName.equals(other.modeName) ||
-                !power.equals(other.power);
+        if (other == null) {
+            return true;
+        }
+
+        return !Objects.equals(this.status, other.status) ||
+                !Objects.equals(this.modeName, other.modeName) ||
+                Math.abs(this.power - other.power) > 0.01f;
     }
 }

@@ -13,10 +13,10 @@ import com.SES.entity.User;
 import com.SES.mapper.DeviceMapper;
 import com.SES.mapper.PolicyMapper;
 import com.SES.mapper.UserMapper;
+import com.SES.service.AbstractCacheService;
 import com.SES.service.DeviceIdCacheService;
 import com.SES.service.LogCommonCacheService;
 import com.SES.service.PolicyService;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.support.converter.MessageConverter;
@@ -26,22 +26,17 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import org.springframework.amqp.core.Message;
 import com.rabbitmq.client.Channel;                // RabbitMQ 通道对象
 
+import static com.SES.config.AutoSettingConfig.ENABLE_AUTO_CACHE_REFRESH;
+import static com.SES.constant.CacheConstant.*;
 
-import static com.SES.constant.CacheConstant.DEVICE_CACHE_MAX_SIZE;
-import static com.SES.constant.CacheConstant.ENABLE_AUTO_CACHE_REFRESH;
 
 @Service
 @Slf4j
-public class LogCommonCacheServiceImpl implements LogCommonCacheService {
-
-    private com.github.benmanes.caffeine.cache.Cache<Long, LogCommonDTO> cache;
-
+public class LogCommonCacheServiceImpl extends AbstractCacheService<Long, LogCommonDTO> implements LogCommonCacheService {
 
     @Autowired
     private PolicyService policyService;
@@ -61,23 +56,53 @@ public class LogCommonCacheServiceImpl implements LogCommonCacheService {
     @Autowired
     private MessageConverter messageConverter;
 
+    // 默认配置
+    @Override
+    protected int getMaxSize() {
+        return LOG_COMMON_CACHE_MAX_SIZE;
+    }
+
+    @Override
+    protected long getTTLInMillis() {
+        return LOG_COMMON_CACHE_TTL; // 单位毫秒
+    }
+
+    @Override
+    protected int getRetryTimes() {
+        return LOG_COMMON_CACHE_RETRY_TIMES;
+    }
+
+    // 提供兜底数据
+    @Override
+    protected boolean enableFallback() {
+        return true;
+    }
+
+    // 生成兜底数据，可以为空
+    @Override
+    protected LogCommonDTO createFallback(Long key) {
+        LogCommonDTO dto = new LogCommonDTO();
+        dto.setUserId(-1L);
+        dto.setUsername("unknown");
+        dto.setDeviceName("unknown");
+        dto.setPolicyName("unknown");
+        dto.setPolicyJson(null);
+        return dto;
+    }
+
+
     /**
      * 初始化缓存
      */
     @PostConstruct
     public void init() {
-        cache = Caffeine.newBuilder()
-                .maximumSize(DEVICE_CACHE_MAX_SIZE) // 根据实际情况调整最大缓存数
-                .expireAfterWrite(5, TimeUnit.MINUTES)
-                .build();
-
-        refreshAllDeviceCaches(); // 初始加载
+        refreshAllDeviceCaches();
     }
 
     /**
-     * 定时任务：每5分钟，刷新所有设备的缓存
+     * 定时自动刷新所有设备的缓存
      */
-    @Scheduled(fixedRate = CacheConstant.LOG_COMMON_REFRESH_INTERVAL)
+    @Scheduled(fixedRate = CacheConstant.LOG_COMMON_CACHE_REFRESH_INTERVAL)
     public void scheduledRefreshLogCommonCache() {
         if(ENABLE_AUTO_CACHE_REFRESH==0){
             return;
@@ -90,14 +115,14 @@ public class LogCommonCacheServiceImpl implements LogCommonCacheService {
      * 为每个设备id刷新一次缓存
      */
     private void refreshAllDeviceCaches() {
-        List<Long> allDeviceIds = deviceIdCacheService.getAllDeviceId();
+        List<Long> allDeviceIds = deviceIdCacheService.getWithSyncRefresh();
         if (allDeviceIds == null || allDeviceIds.isEmpty()) {
             log.warn("未找到任何设备ID，跳过 LogCommonCache 刷新");
             return;
         }
 
         for (Long deviceId : allDeviceIds) {
-            refreshLogCommonCache(deviceId);
+            refresh(deviceId);
         }
 
         log.info("已刷新所有设备的 LogCommonCache，共 {} 个设备", allDeviceIds.size());
@@ -105,8 +130,9 @@ public class LogCommonCacheServiceImpl implements LogCommonCacheService {
 
     /**
      * 刷新deviceId的整个缓存项
+     * @param deviceId
      */
-    public void refreshLogCommonCache(Long deviceId) {
+    protected void refresh(Long deviceId) {
         if (deviceId == null) return;
 
         try {
@@ -169,7 +195,7 @@ public class LogCommonCacheServiceImpl implements LogCommonCacheService {
             }
 
             // 调用刷新方法
-            refreshLogCommonCache(dto.getDeviceId());
+            refresh(dto.getDeviceId());
 
             // 手动确认
             channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
@@ -212,7 +238,7 @@ public class LogCommonCacheServiceImpl implements LogCommonCacheService {
      * 消息体应包含：userId, username
      * 直接修改缓存中该用户所有设备的 username（基于缓存查找）
      */
-    public void refreshLogCommonCacheUser(Long userId, String newUsername) {
+    private void refreshLogCommonCacheUser(Long userId, String newUsername) {
         log.info("开始刷新LogCommon用户 {} 的所有设备 username...", userId);
         if (userId == null || newUsername == null) {
             return;
@@ -267,7 +293,7 @@ public class LogCommonCacheServiceImpl implements LogCommonCacheService {
      * 刷新设备名称部分
      * 消息体应包含：deviceId, deviceName
      */
-    public void refreshLogCommonCacheDevice(Long deviceId, String deviceName) {
+    private void refreshLogCommonCacheDevice(Long deviceId, String deviceName) {
         log.info("开始刷新LogCommon设备 {} 的名称...", deviceId);
         if (deviceId == null) return;
 
@@ -317,7 +343,7 @@ public class LogCommonCacheServiceImpl implements LogCommonCacheService {
      * 消息体应包含：deviceId, policyId
      * 需要重新查策略表
      */
-    public void refreshLogCommonCachePolicy(Long deviceId, Long policyId) {
+    private void refreshLogCommonCachePolicy(Long deviceId, Long policyId) {
         if (deviceId == null) return;
 
         Policy policy = policyMapper.getById(policyId);
@@ -337,17 +363,5 @@ public class LogCommonCacheServiceImpl implements LogCommonCacheService {
 
         log.info("已刷新LogCommon设备 {} 的 policy: {}", deviceId, policyName);
     }
-
-    /**
-     * 获取缓存的LogCommonDTO
-     *
-     * @param deviceId 设备ID
-     * @return LogCommonDTO
-     */
-    public LogCommonDTO getLogCommonDTO(Long deviceId) {
-        if (deviceId == null) return null;
-        return cache.getIfPresent(deviceId);
-    }
-
 
 }
