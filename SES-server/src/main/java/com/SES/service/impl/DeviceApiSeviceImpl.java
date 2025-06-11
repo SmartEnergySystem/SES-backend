@@ -1,5 +1,7 @@
 package com.SES.service.impl;
 
+import com.SES.constant.DeviceStatusConstant;
+import com.SES.constant.StatusConstant;
 import com.SES.dto.deviceApi.DeviceInitApiResultDTO;
 import com.SES.dto.deviceApi.DeviceQueryApiResultDTO;
 import com.SES.entity.SimDevice;
@@ -18,6 +20,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Arrays;
+
+import static com.SES.constant.SimDeviceModeConstant.FAULT_LIST;
 
 
 @Service
@@ -92,6 +96,7 @@ public class DeviceApiSeviceImpl implements DeviceApiService {
             throw new BaseException("找不到模拟设备");
         }
 
+        // 非空才修改
         if (status != null) {
             simDevice.setStatus(status);
         }
@@ -151,9 +156,9 @@ public class DeviceApiSeviceImpl implements DeviceApiService {
             deviceQueryApiResultDTO.setPower(basePower);
         }
 
-        // 若为故障模式，设置设备状态为故障
-        if (modeName != null && modeName.startsWith("故障模式")) {
-            deviceQueryApiResultDTO.setStatus(-1);
+        // 若为故障模式，设置结果的设备状态为故障
+        if (modeName != null && modeName.startsWith("故障")) {
+            deviceQueryApiResultDTO.setStatus(DeviceStatusConstant.FAULT);
         }
 
         return deviceQueryApiResultDTO;
@@ -261,7 +266,7 @@ public class DeviceApiSeviceImpl implements DeviceApiService {
         }
 
         // 统一添加故障模式
-        modeList.addAll(Arrays.asList("故障（短路）", "故障（设备故障）"));
+        modeList.addAll(FAULT_LIST);
         powerList.addAll(Arrays.asList(9999.0f, 0.0f));
 
         // 最后再设置回 info 对象中

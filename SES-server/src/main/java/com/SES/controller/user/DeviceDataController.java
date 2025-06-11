@@ -1,12 +1,11 @@
 package com.SES.controller.user;
 
+import com.SES.dto.deviceData.AlertReportResultDTO;
 import com.SES.dto.deviceData.DeviceDataQueryDTO;
-import com.SES.dto.deviceData.DeviceReportQueryDTO;
+import com.SES.dto.deviceData.ReportQueryDTO;
 import com.SES.dto.deviceData.DeviceReportResultDTO;
-import com.SES.dto.policy.PolicyDTO;
 import com.SES.result.Result;
 import com.SES.service.DeviceDataService;
-import com.SES.service.DeviceService;
 import com.SES.vo.deviceData.DeviceDataVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -44,8 +43,20 @@ public class DeviceDataController {
      */
     @PostMapping("{id}/deviceReport")
     @ApiOperation(value = "根据设备id查询设备报表")
-    public Result<DeviceReportResultDTO> getDeviceReportByDeviceId(@PathVariable Long id,@RequestBody DeviceReportQueryDTO deviceReportQueryDTO) {
-        DeviceReportResultDTO result = deviceDataService.getDeviceReportByDeviceId(id,deviceReportQueryDTO);
+    public Result<DeviceReportResultDTO> getDeviceReportByDeviceId(@PathVariable Long id,@RequestBody ReportQueryDTO reportQueryDTO) {
+        DeviceReportResultDTO result = deviceDataService.getDeviceReportByDeviceId(id, reportQueryDTO);
+        return Result.success(result);
+    }
+
+    /**
+     * 根据设备id查询设备报表
+     * @param id
+     * @return
+     */
+    @PostMapping("{id}/alertReport")
+    @ApiOperation(value = "根据设备id查询警报报表")
+    public Result<AlertReportResultDTO> getAlertReportByDeviceId(@PathVariable Long id, @RequestBody ReportQueryDTO reportQueryDTO) {
+        AlertReportResultDTO result = deviceDataService.getAlertReportByDeviceId(id, reportQueryDTO);
         return Result.success(result);
     }
 }

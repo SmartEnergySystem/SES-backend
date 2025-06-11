@@ -36,12 +36,6 @@ public class DeviceServiceImpl implements DeviceService {
     private DeviceMapper deviceMapper;
 
     @Autowired
-    private OperationLogMapper operationLogMapper;
-
-    @Autowired
-    private UserMapper userMapper;
-
-    @Autowired
     private PolicyMapper policyMapper;
 
     @Autowired
@@ -273,8 +267,7 @@ public class DeviceServiceImpl implements DeviceService {
         deviceMapper.update(device);
         
         // 记录操作日志
-        recordOperationLog(currentUserId, device, devicePolicyEditDTO.getIsApplyPolicy(), 
-                          null, null, devicePolicyEditDTO.getPolicyId());
+        // 跳过
 
         // 构造并发送消息
         try {
@@ -282,7 +275,9 @@ public class DeviceServiceImpl implements DeviceService {
             dto.setDeviceId(id);
             dto.setPolicyId(device.getPolicyId()); // 可能为 null，表示解绑策略
 
+            rabbitTemplate.convertAndSend(RabbitMQConfig.QUEUE_POLICY_MONITOR_REFRESH, id);
             rabbitTemplate.convertAndSend(RabbitMQConfig.QUEUE_LOG_COMMON_REFRESH_POLICY, dto);
+
             log.info("已发送设备策略变更消息: {}", dto);
         } catch (Exception e) {
             log.error("发送设备策略变更消息失败", e);
@@ -316,8 +311,7 @@ public class DeviceServiceImpl implements DeviceService {
         deviceApiService.deviceControlApi(id,status,modeName);
 
         // 记录操作日志
-        recordOperationLog(currentUserId, device, null,
-                          deviceStatusEditDTO.getStatus(), null, null);
+        // 跳过
         
         log.info("用户{}控制设备{}状态为：{}", currentUserId, id, deviceStatusEditDTO.getStatus());
     }
@@ -348,8 +342,7 @@ public class DeviceServiceImpl implements DeviceService {
         deviceApiService.deviceControlApi(id, null,modeName);
 
         // 记录操作日志
-        recordOperationLog(currentUserId, device, null,
-                          null, deviceModeEditDTO.getModeId(), null);
+        // 跳过
         
         log.info("用户{}控制设备{}模式为：{}", currentUserId, id, deviceModeEditDTO.getModeId());
     }
@@ -419,9 +412,7 @@ public class DeviceServiceImpl implements DeviceService {
         deviceApiService.deviceControlApi(id,status,modeName);
         
         // 记录操作日志
-        recordOperationLog(currentUserId, device, deviceControlDTO.getIsApplyPolicy(),
-                          deviceControlDTO.getStatus(), deviceControlDTO.getModeId(),
-                          deviceControlDTO.getPolicyId());
+        // 跳过
 
         // 如果策略变更，发送消息
         if (deviceControlDTO.getIsApplyPolicy() != null
@@ -431,10 +422,9 @@ public class DeviceServiceImpl implements DeviceService {
                 dto.setDeviceId(id);
                 dto.setPolicyId(device.getPolicyId()); // 可能为 null，表示解绑策略
 
-                rabbitTemplate.convertAndSend(
-                        RabbitMQConfig.QUEUE_LOG_COMMON_REFRESH_POLICY,
-                        dto
-                );
+                rabbitTemplate.convertAndSend(RabbitMQConfig.QUEUE_POLICY_MONITOR_REFRESH, id);
+                rabbitTemplate.convertAndSend(RabbitMQConfig.QUEUE_LOG_COMMON_REFRESH_POLICY, dto);
+
                 log.info("已发送设备策略变更消息: {}", dto);
             } catch (Exception e) {
                 log.error("发送设备策略变更消息失败", e);
@@ -442,71 +432,5 @@ public class DeviceServiceImpl implements DeviceService {
         }
         
         log.info("用户{}综合控制设备{}完成", currentUserId, id);
-    }
-
-
-
-    /**
-     * 记录操作日志
-     */
-    // TODO：以后改为操作log类
-    private void recordOperationLog(Long userId, Device device, Integer isApplyPolicy,
-                                   Integer status, Long modeId, Long policyId) {
-        try {
-            User user = userMapper.getById(userId);
-
-            // 获取实际模式名称
-            String modeName = null;
-            if (modeId != null) {
-                DeviceMode deviceMode = deviceModeMapper.getById(modeId);
-                modeName = deviceMode != null ? deviceMode.getName() : "mode_" + modeId;
-            }
-
-            // 获取实际策略名称和详情
-            String policyName = null;
-            String policyDetails = null;
-            if (policyId != null) {
-                Policy policy = policyMapper.getById(policyId);
-                if (policy != null) {
-                    policyName = policy.getName();
-                    // 获取策略详情JSON（包含策略条目信息）
-                    List<PolicyItem> policyItems = policyItemMapper.getByPolicyId(policyId);
-                    if (!policyItems.isEmpty()) {
-                        StringBuilder policyJson = new StringBuilder();
-                        policyJson.append("{\"policyName\":\"").append(policy.getName()).append("\",\"items\":[");
-                        for (int i = 0; i < policyItems.size(); i++) {
-                            PolicyItem item = policyItems.get(i);
-                            if (i > 0) policyJson.append(",");
-                            policyJson.append("{\"startTime\":\"").append(item.getStartTime())
-                                     .append("\",\"endTime\":\"").append(item.getEndTime())
-                                     .append("\",\"modeId\":").append(item.getModeId()).append("}");
-                        }
-                        policyJson.append("]}");
-                        policyDetails = policyJson.toString();
-                    }
-                } else {
-                    policyName = "policy_" + policyId;
-                }
-            }
-
-            OperationLog operationLog = OperationLog.builder()
-                    .userId(userId)
-                    .userUsername(user != null ? user.getUsername() : "unknown")
-                    .deviceId(device.getId())
-                    .deviceName(device.getName())
-                    .time(LocalDateTime.now())
-                    .isApplyPolicy(isApplyPolicy)
-                    .status(status)
-                    .modeName(modeName)
-                    .policyName(policyName)
-                    .policy(policyDetails)
-                    .batchName(null)
-                    .build();
-
-            operationLogMapper.insert(operationLog);
-        } catch (Exception e) {
-            log.error("记录操作日志失败", e);
-            // 不抛出异常，避免影响主业务流程
-        }
     }
 }

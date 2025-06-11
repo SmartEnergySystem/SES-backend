@@ -38,6 +38,12 @@ public class RabbitMQConfig {
     public static final String ROUTING_KEY_REFRESH_POLICY = "log.common.refresh.policy";
 
 
+    // ==== PolicyMonitor刷新相关 ====
+    public static final String QUEUE_POLICY_MONITOR_REFRESH = "policy.monitor.refresh";
+    public static final String ROUTING_KEY_POLICY_MONITOR_REFRESH = "policy.monitor.refresh";
+
+
+
     // ==== 创建 Bean ====
 
     @Bean
@@ -77,6 +83,11 @@ public class RabbitMQConfig {
         return new Queue(QUEUE_LOG_COMMON_REFRESH);
     }
 
+    @Bean
+    public Queue policyMonitorRefreshQueue() {
+        return new Queue(QUEUE_POLICY_MONITOR_REFRESH);
+    }
+
 
     @Bean
     public Binding bindingDeviceCacheRefresh(DirectExchange deviceExchange, Queue deviceCacheRefreshQueue) {
@@ -111,5 +122,12 @@ public class RabbitMQConfig {
         return BindingBuilder.bind(logCommonRefreshQueue)
                 .to(logicalExchange)
                 .with(ROUTING_KEY_REFRESH);
+    }
+
+    @Bean
+    public Binding bindingPolicyMonitorRefresh(DirectExchange deviceExchange, Queue policyMonitorRefreshQueue) {
+        return BindingBuilder.bind(policyMonitorRefreshQueue)
+                .to(deviceExchange)
+                .with(ROUTING_KEY_POLICY_MONITOR_REFRESH);
     }
 }

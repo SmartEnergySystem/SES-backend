@@ -1,14 +1,22 @@
 package com.SES.service.impl;
 
+import com.SES.config.RabbitMQConfig;
+import com.SES.constant.DeviceStatusConstant;
 import com.SES.context.BaseContext;
 import com.SES.dto.PolicyJsonDTO;
+import com.SES.dto.logCommonCache.RefreshLogCommonCachePolicyMessageDTO;
 import com.SES.dto.policy.PolicyDTO;
 import com.SES.dto.policy.PolicyNameEditDTO;
+import com.SES.dto.policyItem.PolicyItemTimeRangeDTO;
+import com.SES.dto.policyItem.PolicyTaskResultDTO;
 import com.SES.entity.Device;
+import com.SES.entity.DeviceMode;
 import com.SES.entity.Policy;
 import com.SES.entity.PolicyItem;
+import com.SES.mapper.DeviceModeMapper;
 import com.SES.vo.policy.PolicyVO;
 
+import java.time.LocalTime;
 import java.util.ArrayList;
 import com.SES.exception.BaseException;
 import com.SES.mapper.DeviceMapper;
@@ -19,11 +27,14 @@ import com.SES.service.PolicyService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -39,7 +50,21 @@ public class PolicyServiceImpl implements PolicyService {
     private DeviceMapper deviceMapper;
 
     @Autowired
+    private DeviceModeMapper deviceModeMapper;
+
+    @Autowired
     private PolicyItemMapper policyItemMapper;
+
+    @Resource
+    private RabbitTemplate rabbitTemplate;
+
+
+
+    private final ObjectMapper objectMapper;
+
+    public PolicyServiceImpl(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
 
     /**
      * 新增策略
@@ -90,6 +115,13 @@ public class PolicyServiceImpl implements PolicyService {
         Device device = deviceMapper.getByIdAndUserId(policy.getDeviceId(), currentUserId);
         if (device == null) {
             throw new BaseException("无权限操作此策略");
+        }
+
+        // 级联删除设备应用
+        if(device.getPolicyId().equals(id)) {
+            device.setPolicyId(null);
+            // 发送策略变更信息
+            sendMessage(null, device.getId());
         }
 
         // 级联删除策略条目
@@ -182,6 +214,12 @@ public class PolicyServiceImpl implements PolicyService {
             throw new BaseException("设备不存在或无权限操作");
         }
 
+
+        // 级联删除设备应用
+        device.setPolicyId(null);
+        // 发送策略变更信息
+        sendMessage(null, deviceId);
+
         // 级联删除：先删除所有策略的条目，再删除策略
         List<Policy> policies = policyMapper.getByDeviceId(deviceId);
         for (Policy policy : policies) {
@@ -193,6 +231,9 @@ public class PolicyServiceImpl implements PolicyService {
 
         log.info("用户{}删除设备{}的所有策略", currentUserId, deviceId);
     }
+
+
+
 
     /**
      * 根据id获得策略的Json字符串，包括策略条目
@@ -220,11 +261,81 @@ public class PolicyServiceImpl implements PolicyService {
         policyJsonDTO.setItems(policyItems); // 直接赋值，无需转换
 
         // 4. 序列化为 JSON 字符串
-        ObjectMapper objectMapper = new ObjectMapper();
         try {
             return objectMapper.writeValueAsString(policyJsonDTO);
         } catch (JsonProcessingException e) {
             throw new BaseException("JSON序列化失败");
+        }
+    }
+
+    /**
+     * 获取指定策略的所有时间点（start 和 end）
+     * @param policyId 策略ID
+     * @return 包含所有时间点的列表，包含 00:00，并已排序、去重
+     */
+    @Override
+    public List<LocalTime> getAllTimePointsByPolicyId(Long policyId) {
+        List<PolicyItemTimeRangeDTO> timeRanges = policyItemMapper.getTimePointsByPolicyId(policyId);
+        List<LocalTime> timePoints = new ArrayList<>();
+
+        for (PolicyItemTimeRangeDTO range : timeRanges) {
+            if (range.getStartTime() != null) {
+                timePoints.add(range.getStartTime());
+            }
+            if (range.getEndTime() != null) {
+                timePoints.add(range.getEndTime());
+            }
+        }
+
+        // 去重 + 排序
+        return timePoints.stream().distinct().sorted().collect(Collectors.toList());
+    }
+
+    /**
+     * 根据策略id和时间查询策略控制任务
+     * @param policyId
+     * @param timePoint
+     * @return
+     */
+    @Override
+    public PolicyTaskResultDTO getPolicyTaskByPolicyIdAndStartTime(Long policyId, LocalTime timePoint) {
+        PolicyItem item = policyItemMapper.getByPolicyIdAndStartTime(policyId, timePoint);
+        PolicyTaskResultDTO result = new PolicyTaskResultDTO();
+
+
+        if (item != null) {
+            // 处于条目开头，设置为条目的模式且开机
+            DeviceMode mode = deviceModeMapper.getById(item.getModeId());
+            String modeName = mode.getName();
+
+            result.setStatus(DeviceStatusConstant.ON);
+            result.setModeName(modeName);
+
+        } else{
+            // 否则关机
+            result.setStatus(DeviceStatusConstant.OFF);
+            result.setModeName(null);
+        }
+
+
+        return result;
+    }
+
+    /**
+     * 发送策略内容变更消息
+     */
+    private void sendMessage(Long policyId, Long deviceId) {
+        try {
+            RefreshLogCommonCachePolicyMessageDTO dto = new RefreshLogCommonCachePolicyMessageDTO();
+            dto.setDeviceId(deviceId);
+            dto.setPolicyId(policyId);
+
+            rabbitTemplate.convertAndSend(RabbitMQConfig.QUEUE_POLICY_MONITOR_REFRESH, deviceId);
+            rabbitTemplate.convertAndSend(RabbitMQConfig.QUEUE_LOG_COMMON_REFRESH_POLICY, dto);
+
+            log.info("已发送设备策略变更消息: {}", dto);
+        } catch (Exception e) {
+            log.error("发送设备策略变更消息失败", e);
         }
     }
 }

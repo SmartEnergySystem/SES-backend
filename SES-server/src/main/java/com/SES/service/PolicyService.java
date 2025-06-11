@@ -2,8 +2,10 @@ package com.SES.service;
 
 import com.SES.dto.policy.PolicyDTO;
 import com.SES.dto.policy.PolicyNameEditDTO;
+import com.SES.dto.policyItem.PolicyTaskResultDTO;
 import com.SES.vo.policy.PolicyVO;
 
+import java.time.LocalTime;
 import java.util.List;
 
 public interface PolicyService {
@@ -45,4 +47,19 @@ public interface PolicyService {
      * @param id
      */
     String getJsonString(Long id);
+
+    /**
+     * 获取指定策略的所有时间点（start 和 end）
+     * @param policyId 策略ID
+     * @return 包含所有时间点的列表
+     */
+    List<LocalTime> getAllTimePointsByPolicyId(Long policyId);
+
+    /**
+     * 根据策略id和时间查询策略控制任务
+     * @param policyId
+     * @param timePoint
+     * @return
+     */
+    PolicyTaskResultDTO getPolicyTaskByPolicyIdAndStartTime(Long policyId, LocalTime timePoint);
 }

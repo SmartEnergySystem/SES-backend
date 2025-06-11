@@ -6,7 +6,7 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 /**
  * 新增策略条目时传递的数据模型
@@ -18,13 +18,13 @@ public class PolicyItemDTO implements Serializable {
     @ApiModelProperty("策略ID")
     private Long policyId;
 
-    @ApiModelProperty("开始时间")
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime startTime;
+    @ApiModelProperty("开始时间，格式：HH:mm:ss")
+    @JsonFormat(pattern = "HH:mm:ss")
+    private LocalTime startTime;
 
-    @ApiModelProperty("结束时间")
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime endTime;
+    @ApiModelProperty("结束时间，格式：HH:mm:ss")
+    @JsonFormat(pattern = "HH:mm:ss")
+    private LocalTime endTime;
 
     @ApiModelProperty("模式ID")
     private Long modeId;

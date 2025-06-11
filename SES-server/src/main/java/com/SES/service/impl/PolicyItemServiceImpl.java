@@ -1,6 +1,8 @@
 package com.SES.service.impl;
 
+import com.SES.config.RabbitMQConfig;
 import com.SES.context.BaseContext;
+import com.SES.dto.logCommonCache.RefreshLogCommonCachePolicyMessageDTO;
 import com.SES.dto.policyItem.PolicyItemDTO;
 import com.SES.dto.policyItem.PolicyItemEditDTO;
 import com.SES.entity.Device;
@@ -14,9 +16,13 @@ import com.SES.service.PolicyItemService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
+import javax.annotation.Resource;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @Slf4j
@@ -30,6 +36,9 @@ public class PolicyItemServiceImpl implements PolicyItemService {
 
     @Autowired
     private DeviceMapper deviceMapper;
+
+    @Resource
+    private RabbitTemplate rabbitTemplate;
 
     /**
      * 新增策略条目
@@ -66,9 +75,14 @@ public class PolicyItemServiceImpl implements PolicyItemService {
         policyItem.setEndTime(policyItemDTO.getEndTime());
         policyItem.setModeId(policyItemDTO.getModeId());
 
-        log.info("准备插入策略条目：{}", policyItem);
-        
+
         policyItemMapper.insert(policyItem);
+
+        // 如果该策略正在被应用，发送变更消息
+        if (Objects.equals(device.getPolicyId(), policy.getId())) {
+            sendMessage(policy.getId(), device.getId());
+        }
+
         log.info("用户{}新增策略条目成功", currentUserId);
     }
 
@@ -99,6 +113,12 @@ public class PolicyItemServiceImpl implements PolicyItemService {
         }
 
         policyItemMapper.deleteById(id);
+
+        // 如果该策略正在被应用，发送变更消息
+        if (Objects.equals(device.getPolicyId(), policy.getId())) {
+            sendMessage(policy.getId(), device.getId());
+        }
+
         log.info("用户{}删除策略条目：{}", currentUserId, id);
     }
 
@@ -155,9 +175,9 @@ public class PolicyItemServiceImpl implements PolicyItemService {
         }
 
         // 验证：不同条目的时间范围不能重叠
-        LocalDateTime newStartTime = policyItemEditDTO.getStartTime() != null ?
+        LocalTime newStartTime = policyItemEditDTO.getStartTime() != null ?
                                     policyItemEditDTO.getStartTime() : policyItem.getStartTime();
-        LocalDateTime newEndTime = policyItemEditDTO.getEndTime() != null ?
+        LocalTime newEndTime = policyItemEditDTO.getEndTime() != null ?
                                   policyItemEditDTO.getEndTime() : policyItem.getEndTime();
 
         validateTimeRangeOverlap(policyItem.getPolicyId(), id, newStartTime, newEndTime);
@@ -174,7 +194,12 @@ public class PolicyItemServiceImpl implements PolicyItemService {
         }
 
         policyItemMapper.update(policyItem);
-        
+
+        // 如果该策略正在被应用，发送变更消息
+        if (Objects.equals(device.getPolicyId(), policy.getId())) {
+            sendMessage(policy.getId(), device.getId());
+        }
+
         log.info("用户{}修改策略条目：{}", currentUserId, id);
     }
 
@@ -199,8 +224,17 @@ public class PolicyItemServiceImpl implements PolicyItemService {
         }
 
         policyItemMapper.deleteByPolicyId(policyId);
+
+        // 如果该策略正在被应用，发送变更消息
+        if (Objects.equals(device.getPolicyId(), policy.getId())) {
+            sendMessage(policy.getId(), device.getId());
+        }
+
+
         log.info("用户{}删除策略{}的所有条目", currentUserId, policyId);
     }
+
+
 
     /**
      * 验证时间范围是否重叠
@@ -210,12 +244,13 @@ public class PolicyItemServiceImpl implements PolicyItemService {
      * @param endTime 结束时间
      */
     private void validateTimeRangeOverlap(Long policyId, Long excludeItemId,
-                                         LocalDateTime startTime, LocalDateTime endTime) {
+                                         LocalTime startTime, LocalTime endTime) {
         if (startTime == null || endTime == null) {
             return; // 如果时间为空，跳过验证
         }
 
-        if (startTime.isAfter(endTime) || startTime.isEqual(endTime)) {
+        // 确保开始时间早于结束时间
+        if (!startTime.isBefore(endTime)) {
             throw new BaseException("开始时间必须早于结束时间");
         }
 
@@ -224,7 +259,7 @@ public class PolicyItemServiceImpl implements PolicyItemService {
 
         for (PolicyItem existingItem : existingItems) {
             // 跳过当前正在修改的条目
-            if (excludeItemId != null && existingItem.getId().equals(excludeItemId)) {
+            if (existingItem.getId().equals(excludeItemId)) {
                 continue;
             }
 
@@ -244,8 +279,8 @@ public class PolicyItemServiceImpl implements PolicyItemService {
      * @param end2 第二个时间范围的结束时间
      * @return 是否重叠
      */
-    private boolean isTimeRangeOverlap(LocalDateTime start1, LocalDateTime end1,
-                                      LocalDateTime start2, LocalDateTime end2) {
+    private boolean isTimeRangeOverlap(LocalTime start1, LocalTime end1,
+                                       LocalTime start2, LocalTime end2) {
         if (start1 == null || end1 == null || start2 == null || end2 == null) {
             return false; // 如果任何时间为空，认为不重叠
         }
@@ -254,5 +289,23 @@ public class PolicyItemServiceImpl implements PolicyItemService {
         // 1. start1 < end2 且 start2 < end1
         // 这是标准的区间重叠判断算法
         return start1.isBefore(end2) && start2.isBefore(end1);
+    }
+
+    /**
+     * 发送策略内容变更消息
+     */
+    private void sendMessage(Long policyId, Long deviceId) {
+        try {
+            RefreshLogCommonCachePolicyMessageDTO dto = new RefreshLogCommonCachePolicyMessageDTO();
+            dto.setDeviceId(deviceId);
+            dto.setPolicyId(policyId);
+
+            rabbitTemplate.convertAndSend(RabbitMQConfig.QUEUE_POLICY_MONITOR_REFRESH, deviceId);
+            rabbitTemplate.convertAndSend(RabbitMQConfig.QUEUE_LOG_COMMON_REFRESH_POLICY, dto);
+
+            log.info("已发送设备策略变更消息: {}", dto);
+        } catch (Exception e) {
+            log.error("发送设备策略变更消息失败", e);
+        }
     }
 }

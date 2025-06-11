@@ -28,8 +28,6 @@ public class DeviceIdCacheServiceImpl extends AbstractCacheService<String, List<
     @Autowired
     private DeviceMapper deviceMapper;
 
-    public DeviceIdCacheServiceImpl() {}
-
     // 默认配置
     @Override
     protected int getMaxSize() {

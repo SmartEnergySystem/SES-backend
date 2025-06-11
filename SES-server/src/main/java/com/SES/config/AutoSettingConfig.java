@@ -11,7 +11,7 @@ public class AutoSettingConfig {
 
     public static final int ENABLE_AUTO_DEVICE_MONITOR = 1; // 是否开启设备自动监测,0=false,1=true
 
-
+    public static final int ENABLE_AUTO_POLICY_MONITOR = 1; // 是否开启策略任务自动刷新,0=false,1=true
 
 
 

@@ -9,20 +9,14 @@ import java.io.Serializable;
 import java.time.LocalTime;
 
 /**
- * 修改策略条目时传递的数据模型
+ * 策略条目的时间范围
  */
 @Data
-@ApiModel(description = "修改策略条目时传递的数据模型")
-public class PolicyItemEditDTO implements Serializable {
+public class PolicyItemTimeRangeDTO implements Serializable {
 
-    @ApiModelProperty("开始时间，格式：HH:mm:ss")
     @JsonFormat(pattern = "HH:mm:ss")
     private LocalTime startTime;
 
-    @ApiModelProperty("结束时间，格式：HH:mm:ss")
     @JsonFormat(pattern = "HH:mm:ss")
     private LocalTime endTime;
-
-    @ApiModelProperty("模式ID")
-    private Long modeId;
 }

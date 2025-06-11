@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Data
 @Builder
@@ -20,9 +21,9 @@ public class PolicyItem implements Serializable {
 
     private Long policyId;
 
-    private LocalDateTime startTime;
+    private LocalTime startTime;
 
-    private LocalDateTime endTime;
+    private LocalTime endTime;
 
     private Long modeId;
 }

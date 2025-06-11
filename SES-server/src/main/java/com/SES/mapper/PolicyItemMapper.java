@@ -1,8 +1,10 @@
 package com.SES.mapper;
 
+import com.SES.dto.policyItem.PolicyItemTimeRangeDTO;
 import com.SES.entity.PolicyItem;
 import org.apache.ibatis.annotations.*;
 
+import java.time.LocalTime;
 import java.util.List;
 
 @Mapper
@@ -51,4 +53,17 @@ public interface PolicyItemMapper {
      * @param policyItem
      */
     void update(PolicyItem policyItem);
+
+    /**
+     * 根据 policy_id 查询所有 start_time 和 end_time 输出为时间对
+     */
+    @Select("SELECT start_time, end_time FROM policy_item WHERE policy_id = #{policyId}")
+    List<PolicyItemTimeRangeDTO> getTimePointsByPolicyId(Long policyId);
+
+
+    /**
+     * 根据 policy_id 和 start_time 查询是否存在匹配的策略条目
+     */
+    @Select("SELECT id, mode_id FROM policy_item WHERE policy_id = #{policyId} AND start_time = #{timePoint}")
+    PolicyItem getByPolicyIdAndStartTime(@Param("policyId") Long policyId, @Param("timePoint") LocalTime timePoint);
 }

@@ -1,15 +1,19 @@
 package com.SES.service.impl;
 
+import com.SES.dto.deviceData.AlertReportResultDTO;
 import com.SES.dto.deviceData.DeviceDataQueryDTO;
-import com.SES.dto.deviceData.DeviceReportQueryDTO;
+import com.SES.dto.deviceData.ReportQueryDTO;
 import com.SES.dto.deviceData.DeviceReportResultDTO;
 import com.SES.dto.deviceMonitor.DeviceDataRedisDTO;
+import com.SES.dto.log.AlertLogDataDTO;
 import com.SES.dto.log.DeviceLogDataDTO;
 import com.SES.dto.log.LogCommonDTO;
+import com.SES.mapper.AlertLogMapper;
 import com.SES.mapper.DeviceLogMapper;
 import com.SES.service.DeviceDataService;
 import com.SES.service.LogCommonCacheService;
 import com.SES.service.LogService;
+import com.SES.vo.deviceData.AlertReportVO;
 import com.SES.vo.deviceData.DeviceDataVO;
 import com.SES.vo.deviceData.DeviceReportVO;
 import lombok.extern.slf4j.Slf4j;
@@ -37,8 +41,12 @@ public class DeviceDataServiceImpl implements DeviceDataService {
 
     @Autowired
     private LogCommonCacheService logCommonCacheService;
+
     @Autowired
     private DeviceLogMapper deviceLogMapper;
+
+    @Autowired
+    private AlertLogMapper alertLogMapper;
 
     /**
      * 获取设备当前状态
@@ -110,9 +118,9 @@ public class DeviceDataServiceImpl implements DeviceDataService {
     }
 
     @Override
-    public DeviceReportResultDTO getDeviceReportByDeviceId(Long id, DeviceReportQueryDTO deviceReportQueryDTO) {
-        LocalDateTime startTime = deviceReportQueryDTO.getStartTime();
-        LocalDateTime endTime = deviceReportQueryDTO.getEndTime();
+    public DeviceReportResultDTO getDeviceReportByDeviceId(Long id, ReportQueryDTO reportQueryDTO) {
+        LocalDateTime startTime = reportQueryDTO.getStartTime();
+        LocalDateTime endTime = reportQueryDTO.getEndTime();
 
         List<DeviceLogDataDTO> logList = deviceLogMapper.getLogsByDeviceIdAndTimeRange(id, startTime, endTime);
 
@@ -131,6 +139,8 @@ public class DeviceDataServiceImpl implements DeviceDataService {
 
             reportVOList.add(vo);
             totalEnergy += log.getEnergyConsumption() != null ? log.getEnergyConsumption() : 0.0F;
+
+            // TODO:删掉过大的数值
             total++;
         }
 
@@ -139,6 +149,35 @@ public class DeviceDataServiceImpl implements DeviceDataService {
         result.setTotalEnergyConsumption(totalEnergy);
         result.setDeviceReports(reportVOList);
 
+
+        return result;
+    }
+
+    @Override
+    public AlertReportResultDTO getAlertReportByDeviceId(Long id, ReportQueryDTO reportQueryDTO) {
+        LocalDateTime startTime = reportQueryDTO.getStartTime();
+        LocalDateTime endTime = reportQueryDTO.getEndTime();
+
+        List<AlertLogDataDTO> logList = alertLogMapper.getLogsByDeviceIdAndTimeRange(id, startTime, endTime);
+
+        List<AlertReportVO> reportVOList = new ArrayList<>();
+        long total = 0;
+
+        for (AlertLogDataDTO log : logList) {
+            AlertReportVO vo = new AlertReportVO();
+            vo.setTimestamp(log.getTime());
+            vo.setStatus(log.getStatus());
+            vo.setModeName(log.getModeName());
+            vo.setPolicyName(log.getPolicyName());
+            vo.setMessage(log.getMessage());
+
+            reportVOList.add(vo);
+            total++;
+        }
+
+        AlertReportResultDTO result = new AlertReportResultDTO();
+        result.setTotal(total);
+        result.setAlertReports(reportVOList);
 
         return result;
     }
