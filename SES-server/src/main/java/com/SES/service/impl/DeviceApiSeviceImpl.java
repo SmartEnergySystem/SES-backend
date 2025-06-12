@@ -10,6 +10,7 @@ import com.SES.exception.BaseException;
 import com.SES.mapper.SimDeviceMapper;
 import com.SES.mapper.SimDeviceModeMapper;
 import com.SES.service.DeviceApiService;
+import com.SES.utils.StatusCodeValidator;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -90,6 +91,9 @@ public class DeviceApiSeviceImpl implements DeviceApiService {
      */
     @Override
     public void deviceControlApi(Long deviceId, Integer status, String modeName) {
+        // 验证设备状态码
+        StatusCodeValidator.validateDeviceStatus(status);
+
         // 查询对应模拟设备
         SimDevice simDevice = simDeviceMapper.getByDeviceId(deviceId);
         if (simDevice == null) {

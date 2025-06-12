@@ -15,6 +15,7 @@ import java.util.List;
 import com.SES.result.PageResult;
 import com.SES.service.DeviceApiService;
 import com.SES.service.DeviceService;
+import com.SES.utils.StatusCodeValidator;
 import com.SES.vo.device.DeviceModeVO;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
@@ -240,6 +241,9 @@ public class DeviceServiceImpl implements DeviceService {
     public void editDevicePolicy(Long id, DevicePolicyEditDTO devicePolicyEditDTO) {
         Long currentUserId = BaseContext.getCurrentId();
 
+        // 验证策略应用状态码
+        StatusCodeValidator.validatePolicyApplyStatus(devicePolicyEditDTO.getIsApplyPolicy());
+
         // 验证设备是否属于当前用户
         Device device = deviceMapper.getByIdAndUserId(id, currentUserId);
         if (device == null) {
@@ -294,6 +298,9 @@ public class DeviceServiceImpl implements DeviceService {
     @Override
     public void editDeviceStatus(Long id, DeviceStatusEditDTO deviceStatusEditDTO) {
         Long currentUserId = BaseContext.getCurrentId();
+
+        // 验证设备状态码
+        StatusCodeValidator.validateDeviceStatus(deviceStatusEditDTO.getStatus());
 
         // 验证设备是否属于当前用户
         Device device = deviceMapper.getByIdAndUserId(id, currentUserId);
@@ -355,6 +362,10 @@ public class DeviceServiceImpl implements DeviceService {
     @Override
     public void editDevice(Long id, DeviceControlDTO deviceControlDTO) {
         Long currentUserId = BaseContext.getCurrentId();
+
+        // 验证状态码
+        StatusCodeValidator.validateDeviceStatus(deviceControlDTO.getStatus());
+        StatusCodeValidator.validatePolicyApplyStatus(deviceControlDTO.getIsApplyPolicy());
 
         // 验证设备是否属于当前用户
         Device device = deviceMapper.getByIdAndUserId(id, currentUserId);

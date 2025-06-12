@@ -12,6 +12,7 @@ import com.SES.exception.*;
 import com.SES.mapper.UserMapper;
 import com.SES.result.PageResult;
 import com.SES.service.UserService;
+import com.SES.utils.StatusCodeValidator;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import lombok.extern.slf4j.Slf4j;
@@ -179,6 +180,9 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public void editType(Long id, Integer type) {
+        // 验证用户类型状态码
+        StatusCodeValidator.validateUserType(type);
+
         // 校验管理员权限
         this.checkCurrentUserIsAdmin();
         if (id == BaseContext.getCurrentId()) {
@@ -191,10 +195,6 @@ public class UserServiceImpl implements UserService {
         if (user == null) {
             //账号不存在
             throw new AccountNotFoundException("账号"+MessageConstant.NOT_EXISTS);
-        }
-        if (!(type == UserTypeConstant.ADMIN || type == UserTypeConstant.NORMAL)) {
-            // 无效的类型
-            throw new AccountNotFoundException(MessageConstant.INVALID_USER_TYPE);
         }
 
         user.setType(type);
@@ -229,6 +229,9 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public void startOrStop(Long id, Integer status) {
+        // 验证启用/禁用状态码
+        StatusCodeValidator.validateEnableDisableStatus(status);
+
         // 校验管理员权限
         this.checkCurrentUserIsAdmin();
         if (id == BaseContext.getCurrentId()) {
@@ -236,16 +239,11 @@ public class UserServiceImpl implements UserService {
             throw new AccountNotFoundException(MessageConstant.ADMIN_COULD_NOT_EDIT_SELF);
         }
 
-
         User user = userMapper.getById(id);
 
         if (user == null) {
             //账号不存在
             throw new AccountNotFoundException("账号"+MessageConstant.NOT_EXISTS);
-        }
-        if (!(status == StatusConstant.ENABLE || status == StatusConstant.DISABLE)) {
-            // 无效的状态
-            throw new AccountNotFoundException(MessageConstant.INVALID_STATUS);
         }
 
         user.setStatus(status);
