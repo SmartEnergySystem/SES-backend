@@ -166,6 +166,7 @@ public class DeviceDataServiceImpl implements DeviceDataService {
         for (AlertLogDataDTO log : logList) {
             AlertReportVO vo = new AlertReportVO();
             vo.setTimestamp(log.getTime());
+            vo.setLevel(log.getLevel());
             vo.setStatus(log.getStatus());
             vo.setModeName(log.getModeName());
             vo.setPolicyName(log.getPolicyName());

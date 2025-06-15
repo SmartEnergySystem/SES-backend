@@ -34,6 +34,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -118,9 +119,8 @@ public class PolicyServiceImpl implements PolicyService {
         }
 
         // 级联删除设备应用
-        if(device.getPolicyId().equals(id)) {
+        if (Objects.equals(device.getPolicyId(), id)) {
             device.setPolicyId(null);
-            // 发送策略变更信息
             sendMessage(null, device.getId());
         }
 
