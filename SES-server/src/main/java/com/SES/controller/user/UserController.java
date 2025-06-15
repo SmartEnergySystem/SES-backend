@@ -217,4 +217,17 @@ public class UserController {
     }
 
 
+    /**
+     * 测试api连接
+     * 仅用于调试
+     * @return
+     */
+    @GetMapping("/testApi")
+    @ApiOperation(value="测试api连接")
+    @PassToken
+    public Result<String> testApi() {
+
+        return Result.success("successfully connect to SES-api");
+    }
+
 }

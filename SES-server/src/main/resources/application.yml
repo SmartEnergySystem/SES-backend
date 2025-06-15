@@ -71,5 +71,5 @@ logging:
       SES:
         mapper: warn
         service: info
-        controller: info
+        controller: debug
 
