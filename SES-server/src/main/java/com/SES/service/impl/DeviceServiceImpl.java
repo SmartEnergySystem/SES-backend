@@ -79,6 +79,7 @@ public class DeviceServiceImpl implements DeviceService {
         // 根据设备类型初始化设备
         Long deviceId = device.getId(); // 插入后自动写回主键，供这里使用
         DeviceInitApiResultDTO deviceInitApiResultDTO = deviceApiService.deviceInitApi(deviceId, deviceDTO.getType());
+        // TODO:改成try，如果api失败，删除之前设备表的插入
 
         // 插入模式表
         List<String>  modeList = deviceInitApiResultDTO.getModeList();

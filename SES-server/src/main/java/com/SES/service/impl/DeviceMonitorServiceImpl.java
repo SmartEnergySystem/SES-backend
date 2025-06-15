@@ -66,6 +66,7 @@ public class DeviceMonitorServiceImpl implements DeviceMonitorService {
     // 异步轮询单个设备
     @Async("devicePollerExecutor")
     public void pollDeviceAsync(Long deviceId) {
+        log.info("开始轮询设备 {}",deviceId);
         try {
             DeviceQueryApiResultDTO result = deviceApiService.deviceQueryApi(deviceId);
 
@@ -96,21 +97,17 @@ public class DeviceMonitorServiceImpl implements DeviceMonitorService {
                 startTime = endTime.minus(DEVICE_DATA_REDIS_REFRESH_INTERVAL, ChronoUnit.MILLIS);
             }
 
-            // 如果设备数据发生变化，记录设备日志
-            if (newData.isChanged(oldData)) {
+            // 记录设备日志（不管设备数据有没有发生变化）
+            SaveDeviceLogDTO saveDeviceLogDTO = new SaveDeviceLogDTO();
+            saveDeviceLogDTO.setDeviceId(deviceId);
+            saveDeviceLogDTO.setStartTime(startTime);
+            saveDeviceLogDTO.setEndTime(endTime);
+            saveDeviceLogDTO.setStatus(newData.getStatus());
+            saveDeviceLogDTO.setModeName(newData.getModeName());
+            saveDeviceLogDTO.setPower(newData.getPower());
 
-                SaveDeviceLogDTO saveDeviceLogDTO = new SaveDeviceLogDTO();
-                saveDeviceLogDTO.setDeviceId(deviceId);
-                saveDeviceLogDTO.setStartTime(startTime);
-                saveDeviceLogDTO.setEndTime(endTime);
-                saveDeviceLogDTO.setStatus(newData.getStatus());
-                saveDeviceLogDTO.setModeName(newData.getModeName());
-                saveDeviceLogDTO.setPower(newData.getPower());
-
-                // 用电量由 LogService 自动计算
-                logService.saveDeviceLog(saveDeviceLogDTO);
-            }
-
+            // 用电量由 LogService 自动计算
+            logService.saveDeviceLog(saveDeviceLogDTO);
             // 如果设备故障状态发生变化，记录警报日志
             if (newData.isDeviceFaultChanged(oldData)) {
                 if (newData.getStatus().equals(DeviceStatusConstant.FAULT)) {
